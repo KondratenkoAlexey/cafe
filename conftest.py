@@ -1,4 +1,9 @@
+import sys
+
 import pytest
+
+# Не создавать __pycache__ при прогоне тестов в дереве проекта.
+sys.dont_write_bytecode = True
 
 
 @pytest.fixture(autouse=True)

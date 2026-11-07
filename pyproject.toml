@@ -22,3 +22,5 @@ package = false
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["tests.py", "test_*.py"]
+# Не писать .pytest_cache в дерево проекта
+addopts = ["-p", "no:cacheprovider"]

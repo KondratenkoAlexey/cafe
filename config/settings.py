@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -59,12 +60,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": env.db(
-        "DATABASE_URL",
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+# Только PostgreSQL. Пример: postgres://cafe:password@127.0.0.1:5432/cafe
+DATABASES = {"default": env.db("DATABASE_URL")}
+if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
+    raise ImproperlyConfigured(
+        "SQLite не используется. Укажите PostgreSQL в DATABASE_URL."
     )
-}
 
 CACHES = {
     "default": {

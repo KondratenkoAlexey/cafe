@@ -49,6 +49,10 @@ git push -u origin main
 
 После успешного `push` пароль от Raspberry Pi и содержимое `.env` в репозиторий не кладите.
 
+База данных везде одна — **PostgreSQL**. SQLite в проекте не используется.
+
+Снаружи наружу смотрит только **nginx (порт 80)**. PostgreSQL и Redis доступны лишь внутри сети Compose по именам сервисов `db` и `redis`.
+
 ## Локальный запуск (Docker)
 
 ```bash
@@ -59,17 +63,15 @@ docker compose up -d --build
 
 Откройте http://localhost/
 
-## Разработка без Docker
+Команды Django и тесты — внутри контейнера `web`:
 
 ```bash
-uv sync
-# SQLite для быстрых тестов:
-set DATABASE_URL=sqlite:///db.sqlite3
-uv run python manage.py migrate
-uv run python manage.py seed_cafe
-uv run python manage.py runserver
-uv run pytest
+docker compose exec web python manage.py seed_cafe
+docker compose exec web pytest -q
+docker compose logs -f web
 ```
+
+UV на ПК нужен для зависимостей и IDE (`uv sync`); сам сайт и БД работают через Compose.
 
 ## Развёртывание на Raspberry Pi
 
@@ -129,7 +131,7 @@ scp -r C:\Users\user\Documents\Cafe home-server@192.168.1.104:/home/home-server/
 
 ```bash
 cd /home/home-server/cafe
-rm -rf .venv __pycache__ db.sqlite3 staticfiles
+rm -rf .venv __pycache__ staticfiles
 ```
 
 ### 3. Создать `.env` на сервере

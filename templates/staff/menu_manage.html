@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Блюда · Кафе{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Меню и стоп-лист</h1>
+  <p>Редактируйте категории, цены и доступность блюд.</p>
+</section>
+
+<div class="grid grid-2">
+  <section class="card">
+    <div class="card-body stack">
+      <h2>Новая категория</h2>
+      <form method="post" action="{% url 'staff_category_save' %}" class="form">
+        {% csrf_token %}
+        <label>Название <input type="text" name="name" required></label>
+        <label>Порядок <input type="number" name="sort_order" value="0"></label>
+        <label class="checkbox-row"><input type="checkbox" name="is_active" checked> Активна</label>
+        <button class="btn btn-primary" type="submit">Создать категорию</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-body stack">
+      <h2>Новое блюдо</h2>
+      <form method="post" action="{% url 'staff_item_save' %}" class="form" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label>Категория
+          <select name="category_id" required>
+            {% for category in categories %}
+              <option value="{{ category.id }}">{{ category.name }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Название <input type="text" name="name" required></label>
+        <label>Описание <textarea name="description"></textarea></label>
+        <div class="form-row form-row-2">
+          <label>Цена, ₽ <input type="text" name="price" required></label>
+          <label>Порядок <input type="number" name="sort_order" value="0"></label>
+        </div>
+        <label>Фото <input type="file" name="photo" accept="image/*"></label>
+        <label class="checkbox-row"><input type="checkbox" name="is_available" checked> В наличии</label>
+        <button class="btn btn-primary" type="submit">Создать блюдо</button>
+      </form>
+    </div>
+  </section>
+</div>
+
+{% for category in categories %}
+  <h2 class="section-title">{{ category.name }} {% if not category.is_active %}<span class="badge badge-muted">скрыта</span>{% endif %}</h2>
+  <div class="card" style="margin-bottom: 1rem;">
+    <div class="card-body">
+      <form method="post" action="{% url 'staff_category_save' %}" class="form form-row form-row-3" style="margin-bottom: 1rem;">
+        {% csrf_token %}
+        <input type="hidden" name="category_id" value="{{ category.id }}">
+        <label>Название <input type="text" name="name" value="{{ category.name }}" required></label>
+        <label>Порядок <input type="number" name="sort_order" value="{{ category.sort_order }}"></label>
+        <label class="checkbox-row"><input type="checkbox" name="is_active" {% if category.is_active %}checked{% endif %}> Активна</label>
+        <button class="btn" type="submit">Сохранить категорию</button>
+      </form>
+
+      {% for item in category.items.all %}
+        <div class="item-row">
+          <form method="post" action="{% url 'staff_item_save' %}" class="form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+            <input type="hidden" name="category_id" value="{{ category.id }}">
+            <div class="form-row form-row-2">
+              <label>Название <input type="text" name="name" value="{{ item.name }}" required></label>
+              <label>Цена, ₽ <input type="text" name="price" value="{{ item.price }}" required></label>
+            </div>
+            <label>Описание <textarea name="description">{{ item.description }}</textarea></label>
+            <div class="form-row form-row-3">
+              <label>Порядок <input type="number" name="sort_order" value="{{ item.sort_order }}"></label>
+              <label>Фото <input type="file" name="photo" accept="image/*"></label>
+              <label class="checkbox-row"><input type="checkbox" name="is_available" {% if item.is_available %}checked{% endif %}> В наличии</label>
+            </div>
+            <div class="row">
+              <button class="btn btn-primary" type="submit">Сохранить</button>
+            </div>
+          </form>
+          <form method="post" action="{% url 'staff_item_toggle' item.id %}">
+            {% csrf_token %}
+            <button class="btn {% if item.is_available %}btn-warn{% else %}btn-ok{% endif %}" type="submit">
+              {% if item.is_available %}В стоп-лист{% else %}Вернуть в меню{% endif %}
+            </button>
+          </form>
+        </div>
+      {% empty %}
+        <div class="empty">В категории пока нет блюд.</div>
+      {% endfor %}
+    </div>
+  </div>
+{% endfor %}
+{% endblock %}

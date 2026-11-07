@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Столы · Кафе{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Столы</h1>
+  <p>Откройте стол, чтобы вести заказ.</p>
+</section>
+
+<div class="grid grid-tables">
+  {% for table in tables %}
+    <a class="card table-tile {% if table.is_occupied %}occupied{% endif %}" href="{% url 'staff_table_detail' table.id %}">
+      <div class="number">{{ table.number }}</div>
+      <div class="muted">{{ table.seats }} мест</div>
+      {% if table.is_occupied %}
+        <span class="badge badge-warn">{{ table.open_order.get_status_display }}</span>
+      {% else %}
+        <span class="badge badge-ok">свободен</span>
+      {% endif %}
+    </a>
+  {% empty %}
+    <div class="card"><div class="empty">Столы ещё не созданы.</div></div>
+  {% endfor %}
+</div>
+{% endblock %}

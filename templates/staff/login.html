@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Вход персонала · Кафе{% endblock %}
+
+{% block nav %}
+  <a href="{% url 'public_menu' %}">Меню</a>
+{% endblock %}
+
+{% block content %}
+<div class="login-wrap card">
+  <div class="card-body stack">
+    <div class="hero">
+      <h1>Вход персонала</h1>
+      <p>Официанты, повара и администраторы.</p>
+    </div>
+    {% if error %}<div class="message message-error">{{ error }}</div>{% endif %}
+    <form method="post" class="form">
+      {% csrf_token %}
+      <label>Логин
+        <input type="text" name="username" autocomplete="username" required>
+      </label>
+      <label>Пароль
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button class="btn btn-primary" type="submit">Войти</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

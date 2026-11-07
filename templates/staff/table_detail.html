@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Стол {{ table.number }} · Кафе{% endblock %}
+
+{% block content %}
+<section class="hero row space-between">
+  <div>
+    <h1>Стол {{ table.number }}</h1>
+    <p class="muted">{{ table.seats }} мест</p>
+  </div>
+  <a class="btn btn-ghost" href="{% url 'staff_tables' %}">Ко всем столам</a>
+</section>
+
+{% if not order %}
+  <div class="card">
+    <div class="card-body stack">
+      <p>Стол свободен. Откройте заказ, чтобы принимать позиции.</p>
+      <form method="post" action="{% url 'staff_open_order' table.id %}">
+        {% csrf_token %}
+        <button class="btn btn-primary" type="submit">Открыть заказ</button>
+      </form>
+    </div>
+  </div>
+{% else %}
+  <div class="grid grid-2">
+    <section class="card">
+      <div class="card-body stack">
+        <div class="row space-between">
+          <h2>Заказ #{{ order.id }}</h2>
+          <span class="badge">{{ order.get_status_display }}</span>
+        </div>
+        <div class="price">Итого: {{ order.total }} ₽</div>
+
+        <div>
+          {% for item in order.items.all %}
+            <div class="item-row">
+              <div class="row space-between">
+                <strong>{{ item.menu_item.name }} × {{ item.quantity }}</strong>
+                <span>{{ item.line_total }} ₽</span>
+              </div>
+              <div class="row space-between">
+                <span class="badge {% if item.status == 'cancelled' %}badge-muted{% elif item.status == 'ready' %}badge-ok{% elif item.status == 'cooking' %}badge-warn{% endif %}">
+                  {{ item.get_status_display }}
+                </span>
+                {% if item.note %}<span class="muted">{{ item.note }}</span>{% endif %}
+              </div>
+              {% if item.status != 'cancelled' and item.status != 'served' and order.status != 'paid' %}
+                <form method="post" action="{% url 'staff_cancel_item' item.id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-ghost" type="submit">Отменить позицию</button>
+                </form>
+              {% endif %}
+            </div>
+          {% empty %}
+            <div class="empty">Пока пусто — добавьте блюда справа.</div>
+          {% endfor %}
+        </div>
+
+        <div class="row">
+          {% if order.can_send_to_kitchen %}
+            <form method="post" action="{% url 'staff_send_kitchen' order.id %}">
+              {% csrf_token %}
+              <button class="btn btn-primary" type="submit">На кухню</button>
+            </form>
+          {% endif %}
+          {% if order.can_mark_served %}
+            <form method="post" action="{% url 'staff_mark_served' order.id %}">
+              {% csrf_token %}
+              <button class="btn btn-ok" type="submit">Подано</button>
+            </form>
+          {% endif %}
+          {% if order.can_mark_paid %}
+            <form method="post" action="{% url 'staff_mark_paid' order.id %}">
+              {% csrf_token %}
+              <button class="btn btn-ok" type="submit">Оплачено</button>
+            </form>
+          {% endif %}
+          {% if order.can_cancel %}
+            <form method="post" action="{% url 'staff_cancel_order' order.id %}">
+              {% csrf_token %}
+              <button class="btn btn-danger" type="submit">Отменить заказ</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-body">
+        <h2>Добавить блюдо</h2>
+        {% if order.can_add_items %}
+          <form method="post" action="{% url 'staff_add_item' table.id %}" class="form" style="margin-top: 1rem;">
+            {% csrf_token %}
+            <label>Блюдо
+              <select name="menu_item_id" required>
+                {% for item in available_items %}
+                  <option value="{{ item.id }}">{{ item.category.name }} · {{ item.name }} — {{ item.price }} ₽</option>
+                {% endfor %}
+              </select>
+            </label>
+            <div class="form-row form-row-2">
+              <label>Количество
+                <input type="number" name="quantity" min="1" value="1" required>
+              </label>
+              <label>Комментарий
+                <input type="text" name="note" placeholder="без лука, средний прожар">
+              </label>
+            </div>
+            <button class="btn btn-primary" type="submit">Добавить</button>
+          </form>
+        {% else %}
+          <p class="muted">Заказ закрыт, добавлять блюда нельзя.</p>
+        {% endif %}
+      </div>
+    </section>
+  </div>
+{% endif %}
+{% endblock %}

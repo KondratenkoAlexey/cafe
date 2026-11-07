@@ -1,0 +1,44 @@
+<div class="grid grid-2">
+  {% for item in items %}
+    <article class="card kitchen-card">
+      <div class="row space-between">
+        <strong>Стол {{ item.order.table.number }}</strong>
+        <span class="badge {% if item.status == 'cooking' %}badge-warn{% else %}badge-muted{% endif %}">
+          {{ item.get_status_display }}
+        </span>
+      </div>
+      <div>
+        <h3 style="margin:0;">{{ item.menu_item.name }} × {{ item.quantity }}</h3>
+        {% if item.note %}<p class="muted" style="margin:0.35rem 0 0;">{{ item.note }}</p>{% endif %}
+      </div>
+      <div class="row">
+        {% if item.status == 'queued' %}
+          <form
+            method="post"
+            action="{% url 'staff_item_cooking' item.id %}"
+            hx-post="{% url 'staff_item_cooking' item.id %}"
+            hx-target="#kitchen-queue"
+            hx-swap="innerHTML"
+          >
+            {% csrf_token %}
+            <button class="btn btn-warn" type="submit">Готовится</button>
+          </form>
+        {% endif %}
+        {% if item.status == 'queued' or item.status == 'cooking' %}
+          <form
+            method="post"
+            action="{% url 'staff_item_ready' item.id %}"
+            hx-post="{% url 'staff_item_ready' item.id %}"
+            hx-target="#kitchen-queue"
+            hx-swap="innerHTML"
+          >
+            {% csrf_token %}
+            <button class="btn btn-ok" type="submit">Готово</button>
+          </form>
+        {% endif %}
+      </div>
+    </article>
+  {% empty %}
+    <div class="card"><div class="empty">Очередь пуста — можно передохнуть.</div></div>
+  {% endfor %}
+</div>

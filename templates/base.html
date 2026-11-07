@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Кафе{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="{% url 'public_menu' %}">Кафе</a>
+      <nav class="nav">
+        {% block nav %}
+          <a href="{% url 'public_menu' %}">Меню</a>
+          {% if user.is_authenticated %}
+            {% if user.is_waiter_role %}<a href="{% url 'staff_tables' %}">Столы</a>{% endif %}
+            {% if user.is_cook_role %}<a href="{% url 'staff_kitchen' %}">Кухня</a>{% endif %}
+            {% if user.is_admin_role %}
+              <a href="{% url 'staff_menu_manage' %}">Блюда</a>
+              <a href="{% url 'staff_settings' %}">Настройки</a>
+            {% endif %}
+            <a href="{% url 'staff_logout' %}">Выйти</a>
+          {% else %}
+            <a href="{% url 'staff_login' %}">Персонал</a>
+          {% endif %}
+        {% endblock %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message message-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

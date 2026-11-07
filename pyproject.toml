@@ -1,0 +1,29 @@
+[project]
+name = "cafe"
+version = "0.1.0"
+description = "Веб-приложение кафе: меню для гостей и смена персонала"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=5.2,<5.3",
+    "django-environ>=0.14.0",
+    "django-redis>=7.0.0",
+    "gunicorn>=26.2.0",
+    "pillow>=13.0.0",
+    "psycopg[binary]>=3.3.8",
+    "whitenoise>=6.12.0",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "paramiko>=5.1.0",
+    "pytest>=9.2.0",
+    "pytest-django>=4.14.0",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py"]

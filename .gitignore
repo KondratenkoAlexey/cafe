@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.py[oc]
+*.egg-info
+build/
+dist/
+wheels/
+
+# Virtual environments
+.venv/
+
+# Environment and secrets (пароли, ключи, токены)
+.env
+.env.local
+.env.production
+.env.staging
+.env.*.local
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+!*.key.example
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+*_rsa
+*_ed25519
+*.secret
+secrets/
+.secrets/
+credentials.json
+credentials.yaml
+credentials.yml
+auth.json
+token.json
+service-account.json
+google-credentials.json
+passwords.txt
+passwords.json
+.htpasswd
+docker-compose.override.yml
+
+# Django
+db.sqlite3
+media/*
+!media/.gitkeep
+staticfiles/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Pytest / coverage
+.pytest_cache/
+.coverage
+htmlcov/

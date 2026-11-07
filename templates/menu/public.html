@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Меню · Кафе{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>Меню</h1>
+  <p>Цены в рублях. Серые карточки — блюда временно закончились.</p>
+</section>
+
+{% for entry in categories %}
+  {% with category=entry.category items=entry.items %}
+    {% if items %}
+      <h2 class="section-title">{{ category.name }}</h2>
+      <div class="grid grid-menu">
+        {% for item in items %}
+          <article class="card {% if not item.is_available %}unavailable{% endif %}">
+            {% if item.photo %}
+              <img class="menu-photo" src="{{ item.photo.url }}" alt="{{ item.name }}">
+            {% else %}
+              <div class="menu-photo"></div>
+            {% endif %}
+            <div class="card-body stack">
+              <div class="row space-between">
+                <h3>{{ item.name }}</h3>
+                {% if not item.is_available %}
+                  <span class="badge badge-muted">закончилось</span>
+                {% endif %}
+              </div>
+              {% if item.description %}<p class="muted">{{ item.description }}</p>{% endif %}
+              <div class="price">{{ item.price }} ₽</div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+{% empty %}
+  <div class="card"><div class="empty">Меню пока пустое.</div></div>
+{% endfor %}
+{% endblock %}

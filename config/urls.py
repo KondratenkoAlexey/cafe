@@ -9,6 +9,7 @@ from service import views as service_views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", menu_views.public_menu, name="public_menu"),
+    path("category/<int:category_id>/", menu_views.public_category, name="public_category"),
     path("staff/login/", service_views.staff_login, name="staff_login"),
     path("staff/logout/", service_views.staff_logout, name="staff_logout"),
     path("staff/", service_views.staff_home, name="staff_home"),
@@ -28,9 +29,12 @@ urlpatterns = [
     path("staff/menu/category/", service_views.staff_category_save, name="staff_category_save"),
     path("staff/menu/item/", service_views.staff_item_save, name="staff_item_save"),
     path("staff/menu/item/<int:item_id>/toggle/", service_views.staff_item_toggle, name="staff_item_toggle"),
+    path("staff/menu/item/<int:item_id>/delete/", service_views.staff_item_delete, name="staff_item_delete"),
     path("staff/settings/", service_views.staff_settings, name="staff_settings"),
     path("staff/settings/table/", service_views.staff_table_save, name="staff_table_save"),
+    path("staff/settings/table/<int:table_id>/delete/", service_views.staff_table_delete, name="staff_table_delete"),
     path("staff/settings/user/", service_views.staff_user_save, name="staff_user_save"),
+    path("staff/settings/user/<int:user_id>/delete/", service_views.staff_user_delete, name="staff_user_delete"),
 ]
 
 if settings.DEBUG:

@@ -3,82 +3,164 @@
 {% block title %}Настройки · Кафе{% endblock %}
 
 {% block content %}
-<section class="hero">
+<section class="page-hero">
   <h1>Настройки</h1>
   <p>Столы и учётные записи персонала.</p>
 </section>
 
-<div class="grid grid-2">
-  <section class="card">
-    <div class="card-body stack">
-      <h2>Столы</h2>
-      <form method="post" action="{% url 'staff_table_save' %}" class="form">
-        {% csrf_token %}
-        <div class="form-row form-row-2">
-          <label>Номер <input type="number" name="number" min="1" required></label>
-          <label>Мест <input type="number" name="seats" min="1" value="4" required></label>
-        </div>
-        <label class="checkbox-row"><input type="checkbox" name="is_active" checked> Активен</label>
-        <button class="btn btn-primary" type="submit">Добавить стол</button>
-      </form>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <section class="surface-card p-4 h-100">
+      <h2 class="staff-panel-title">Столы</h2>
+
+      <div class="staff-record staff-record-create">
+        <div class="staff-record-title">Новый стол</div>
+        <form method="post" action="{% url 'staff_table_save' %}" class="row g-3">
+          {% csrf_token %}
+          <div class="col-md-4">
+            <label class="form-label">Номер</label>
+            <input class="form-control" type="number" name="number" min="1" required>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Мест</label>
+            <input class="form-control" type="number" name="seats" min="1" value="4" required>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <div class="form-check mb-2">
+              <input class="form-check-input" type="checkbox" name="is_active" id="table_active_new" checked>
+              <label class="form-check-label" for="table_active_new">Активен</label>
+            </div>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-primary btn-touch" type="submit">Добавить стол</button>
+          </div>
+        </form>
+      </div>
 
       {% for table in tables %}
-        <form method="post" action="{% url 'staff_table_save' %}" class="form" style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
-          {% csrf_token %}
-          <input type="hidden" name="table_id" value="{{ table.id }}">
-          <div class="form-row form-row-2">
-            <label>Номер <input type="number" name="number" value="{{ table.number }}" min="1" required></label>
-            <label>Мест <input type="number" name="seats" value="{{ table.seats }}" min="1" required></label>
-          </div>
-          <label class="checkbox-row"><input type="checkbox" name="is_active" {% if table.is_active %}checked{% endif %}> Активен</label>
-          <button class="btn" type="submit">Сохранить стол {{ table.number }}</button>
-        </form>
+        <div class="staff-record">
+          <div class="staff-record-title">Стол {{ table.number }}</div>
+          <form method="post" action="{% url 'staff_table_save' %}" class="row g-3">
+            {% csrf_token %}
+            <input type="hidden" name="table_id" value="{{ table.id }}">
+            <div class="col-md-4">
+              <label class="form-label">Номер</label>
+              <input class="form-control" type="number" name="number" value="{{ table.number }}" min="1" required>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Мест</label>
+              <input class="form-control" type="number" name="seats" value="{{ table.seats }}" min="1" required>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="is_active" id="table_active_{{ table.id }}" {% if table.is_active %}checked{% endif %}>
+                <label class="form-check-label" for="table_active_{{ table.id }}">Активен</label>
+              </div>
+            </div>
+            <div class="col-12 d-flex flex-wrap gap-2">
+              <button class="btn btn-outline-primary btn-touch" type="submit">Сохранить стол {{ table.number }}</button>
+            </div>
+          </form>
+          <form method="post" action="{% url 'staff_table_delete' table.id %}" class="mt-2"
+                onsubmit="return confirm('Удалить стол {{ table.number }}?');">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-touch" type="submit">Удалить стол</button>
+          </form>
+        </div>
       {% empty %}
-        <div class="empty">Столов пока нет.</div>
+        <div class="empty-state py-3">Столов пока нет.</div>
       {% endfor %}
-    </div>
-  </section>
+    </section>
+  </div>
 
-  <section class="card">
-    <div class="card-body stack">
-      <h2>Сотрудники</h2>
-      <form method="post" action="{% url 'staff_user_save' %}" class="form">
-        {% csrf_token %}
-        <label>Логин <input type="text" name="username" required></label>
-        <label>Имя <input type="text" name="first_name"></label>
-        <label>Роль
-          <select name="role">
-            {% for value, label in roles %}
-              <option value="{{ value }}">{{ label }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <label>Пароль <input type="password" name="password" required></label>
-        <label class="checkbox-row"><input type="checkbox" name="is_active" checked> Активен</label>
-        <button class="btn btn-primary" type="submit">Создать сотрудника</button>
-      </form>
+  <div class="col-lg-6">
+    <section class="surface-card p-4 h-100">
+      <h2 class="staff-panel-title">Сотрудники</h2>
 
-      {% for staff_user in users %}
-        <form method="post" action="{% url 'staff_user_save' %}" class="form" style="border-top: 1px solid var(--border); padding-top: 0.75rem;">
+      <div class="staff-record staff-record-create">
+        <div class="staff-record-title">Новый сотрудник</div>
+        <form method="post" action="{% url 'staff_user_save' %}" class="row g-3">
           {% csrf_token %}
-          <input type="hidden" name="user_id" value="{{ staff_user.id }}">
-          <label>Логин <input type="text" name="username" value="{{ staff_user.username }}" required></label>
-          <label>Имя <input type="text" name="first_name" value="{{ staff_user.first_name }}"></label>
-          <label>Роль
-            <select name="role">
+          <div class="col-md-6">
+            <label class="form-label">Логин</label>
+            <input class="form-control" type="text" name="username" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Имя</label>
+            <input class="form-control" type="text" name="first_name">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Роль</label>
+            <select class="form-select" name="role">
               {% for value, label in roles %}
-                <option value="{{ value }}" {% if staff_user.role == value %}selected{% endif %}>{{ label }}</option>
+                <option value="{{ value }}">{{ label }}</option>
               {% endfor %}
             </select>
-          </label>
-          <label>Новый пароль <input type="password" name="password" placeholder="оставьте пустым, чтобы не менять"></label>
-          <label class="checkbox-row"><input type="checkbox" name="is_active" {% if staff_user.is_active %}checked{% endif %}> Активен</label>
-          <button class="btn" type="submit">Сохранить {{ staff_user.username }}</button>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Пароль</label>
+            <input class="form-control" type="password" name="password" required>
+          </div>
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="is_active" id="user_active_new" checked>
+              <label class="form-check-label" for="user_active_new">Активен</label>
+            </div>
+          </div>
+          <div class="col-12">
+            <button class="btn btn-primary btn-touch" type="submit">Создать сотрудника</button>
+          </div>
         </form>
+      </div>
+
+      {% for staff_user in users %}
+        <div class="staff-record">
+          <div class="staff-record-title">{{ staff_user.username }}{% if staff_user.first_name %} · {{ staff_user.first_name }}{% endif %}</div>
+          <form method="post" action="{% url 'staff_user_save' %}" class="row g-3">
+            {% csrf_token %}
+            <input type="hidden" name="user_id" value="{{ staff_user.id }}">
+            <div class="col-md-6">
+              <label class="form-label">Логин</label>
+              <input class="form-control" type="text" name="username" value="{{ staff_user.username }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Имя</label>
+              <input class="form-control" type="text" name="first_name" value="{{ staff_user.first_name }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Роль</label>
+              <select class="form-select" name="role">
+                {% for value, label in roles %}
+                  <option value="{{ value }}" {% if staff_user.role == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Новый пароль</label>
+              <input class="form-control" type="password" name="password" placeholder="оставьте пустым, чтобы не менять">
+            </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="is_active" id="user_active_{{ staff_user.id }}" {% if staff_user.is_active %}checked{% endif %}>
+                <label class="form-check-label" for="user_active_{{ staff_user.id }}">Активен</label>
+              </div>
+            </div>
+            <div class="col-12 d-flex flex-wrap gap-2">
+              <button class="btn btn-outline-primary btn-touch" type="submit">Сохранить {{ staff_user.username }}</button>
+            </div>
+          </form>
+          {% if staff_user.id != user.id %}
+            <form method="post" action="{% url 'staff_user_delete' staff_user.id %}" class="mt-2"
+                  onsubmit="return confirm('Удалить сотрудника «{{ staff_user.username }}»?');">
+              {% csrf_token %}
+              <button class="btn btn-outline-danger btn-touch" type="submit">Удалить</button>
+            </form>
+          {% endif %}
+        </div>
       {% empty %}
-        <div class="empty">Сотрудников пока нет.</div>
+        <div class="empty-state py-3">Сотрудников пока нет.</div>
       {% endfor %}
-    </div>
-  </section>
+    </section>
+  </div>
 </div>
 {% endblock %}

@@ -53,7 +53,7 @@ def latte(db):
     return MenuItem.objects.create(
         category=category,
         name="Латте",
-        price=Decimal("250.00"),
+        price=Decimal("9.10"),
         is_available=True,
     )
 
@@ -125,8 +125,15 @@ def test_menu_cache_invalidation(latte):
     cache.clear()
     response = client.get(reverse("public_menu"))
     assert response.status_code == 200
-    assert cache.get(MENU_CACHE_KEY) is not None
+    assert cache.get(f"{MENU_CACHE_KEY}:categories") is not None
 
     latte.name = "Латте большой"
     latte.save()
-    assert cache.get(MENU_CACHE_KEY) is None
+    assert cache.get(f"{MENU_CACHE_KEY}:categories") is None
+
+
+def test_category_page(latte):
+    client = Client()
+    response = client.get(reverse("public_category", args=[latte.category_id]))
+    assert response.status_code == 200
+    assert latte.name.encode() in response.content or latte.name in response.content.decode()

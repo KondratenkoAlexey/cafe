@@ -3,26 +3,34 @@
 {% block title %}Вход персонала · Кафе{% endblock %}
 
 {% block nav %}
-  <a href="{% url 'public_menu' %}">Меню</a>
+  <li class="nav-item">
+    <a class="nav-link px-3" href="{% url 'public_menu' %}">Меню</a>
+  </li>
 {% endblock %}
 
 {% block content %}
-<div class="login-wrap card">
-  <div class="card-body stack">
-    <div class="hero">
-      <h1>Вход персонала</h1>
+<div class="login-shell">
+  <div class="surface-card login-card p-4 p-md-5">
+    <div class="page-hero mb-4">
+      <h1 class="h2">Вход персонала</h1>
       <p>Официанты, повара и администраторы.</p>
     </div>
-    {% if error %}<div class="message message-error">{{ error }}</div>{% endif %}
-    <form method="post" class="form">
+    {% if error %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+    {% endif %}
+    <form method="post" class="d-grid gap-3">
       {% csrf_token %}
-      <label>Логин
-        <input type="text" name="username" autocomplete="username" required>
-      </label>
-      <label>Пароль
-        <input type="password" name="password" autocomplete="current-password" required>
-      </label>
-      <button class="btn btn-primary" type="submit">Войти</button>
+      <div>
+        <label class="form-label" for="id_username">Логин</label>
+        <input class="form-control form-control-lg" type="text" name="username" id="id_username"
+               autocomplete="username" required>
+      </div>
+      <div>
+        <label class="form-label" for="id_password">Пароль</label>
+        <input class="form-control form-control-lg" type="password" name="password" id="id_password"
+               autocomplete="current-password" required>
+      </div>
+      <button class="btn btn-primary btn-lg btn-touch" type="submit">Войти</button>
     </form>
   </div>
 </div>

@@ -3,39 +3,28 @@
 {% block title %}Меню · Кафе{% endblock %}
 
 {% block content %}
-<section class="hero">
+<section class="page-hero">
   <h1>Меню</h1>
-  <p>Цены в рублях. Серые карточки — блюда временно закончились.</p>
+  <p>Выберите категорию, чтобы посмотреть блюда. Цены в белорусских рублях (Br).</p>
 </section>
 
-{% for entry in categories %}
-  {% with category=entry.category items=entry.items %}
-    {% if items %}
-      <h2 class="section-title">{{ category.name }}</h2>
-      <div class="grid grid-menu">
-        {% for item in items %}
-          <article class="card {% if not item.is_available %}unavailable{% endif %}">
-            {% if item.photo %}
-              <img class="menu-photo" src="{{ item.photo.url }}" alt="{{ item.name }}">
-            {% else %}
-              <div class="menu-photo"></div>
-            {% endif %}
-            <div class="card-body stack">
-              <div class="row space-between">
-                <h3>{{ item.name }}</h3>
-                {% if not item.is_available %}
-                  <span class="badge badge-muted">закончилось</span>
-                {% endif %}
-              </div>
-              {% if item.description %}<p class="muted">{{ item.description }}</p>{% endif %}
-              <div class="price">{{ item.price }} ₽</div>
-            </div>
-          </article>
-        {% endfor %}
-      </div>
-    {% endif %}
-  {% endwith %}
-{% empty %}
-  <div class="card"><div class="empty">Меню пока пустое.</div></div>
-{% endfor %}
+<div class="row g-3 g-lg-4">
+  {% for category in categories %}
+    <div class="col-12 col-sm-6 col-lg-4">
+      <a class="surface-card category-tile text-decoration-none d-block h-100 p-4"
+         href="{% url 'public_category' category.id %}">
+        <div class="category-icon mb-2">{% if category.icon %}{{ category.icon }}{% else %}🍽️{% endif %}</div>
+        <h2 class="h4 mb-2">{{ category.name }}</h2>
+        {% if category.subtitle %}
+          <p class="text-secondary mb-3 small">{{ category.subtitle }}</p>
+        {% endif %}
+        <span class="badge badge-cobalt">{{ category.available_items_count }} позиций</span>
+      </a>
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="surface-card"><div class="empty-state">Меню пока пустое.</div></div>
+    </div>
+  {% endfor %}
+</div>
 {% endblock %}

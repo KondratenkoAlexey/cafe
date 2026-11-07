@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ category.name }} · Кафе{% endblock %}
+
+{% block content %}
+<section class="page-hero d-flex flex-wrap justify-content-between align-items-start gap-3">
+  <div>
+    <h1>{% if category.icon %}{{ category.icon }} {% endif %}{{ category.name }}</h1>
+    {% if category.subtitle %}<p>{{ category.subtitle }}</p>{% endif %}
+  </div>
+  <a class="btn btn-outline-light btn-touch" href="{% url 'public_menu' %}">Все категории</a>
+</section>
+
+<div class="row g-3 g-lg-4">
+  {% for item in items %}
+    <div class="col-12 col-sm-6 col-lg-4">
+      <article class="surface-card menu-item-card {% if not item.is_available %}unavailable{% endif %}">
+        {% if item.photo %}
+          <img class="menu-photo" src="{{ item.photo.url }}" alt="{{ item.name }}">
+        {% else %}
+          <div class="menu-photo menu-photo-empty">Кафе</div>
+        {% endif %}
+        <div class="p-3 d-flex flex-column gap-2">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <h3 class="h5 mb-0">{{ item.name }}</h3>
+            {% if not item.is_available %}
+              <span class="badge text-bg-secondary">закончилось</span>
+            {% endif %}
+          </div>
+          {% if item.portion %}
+            <div class="portion-badge">{{ item.portion }}</div>
+          {% endif %}
+          {% if item.description %}
+            <p class="text-secondary mb-0 small">{{ item.description }}</p>
+          {% endif %}
+          <div class="price mt-auto">{{ item.price }} Br</div>
+        </div>
+      </article>
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="surface-card"><div class="empty-state">В этой категории пока нет блюд.</div></div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

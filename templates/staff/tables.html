@@ -3,24 +3,29 @@
 {% block title %}Столы · Кафе{% endblock %}
 
 {% block content %}
-<section class="hero">
+<section class="page-hero">
   <h1>Столы</h1>
   <p>Откройте стол, чтобы вести заказ.</p>
 </section>
 
-<div class="grid grid-tables">
+<div class="row g-3">
   {% for table in tables %}
-    <a class="card table-tile {% if table.is_occupied %}occupied{% endif %}" href="{% url 'staff_table_detail' table.id %}">
-      <div class="number">{{ table.number }}</div>
-      <div class="muted">{{ table.seats }} мест</div>
-      {% if table.is_occupied %}
-        <span class="badge badge-warn">{{ table.open_order.get_status_display }}</span>
-      {% else %}
-        <span class="badge badge-ok">свободен</span>
-      {% endif %}
-    </a>
+    <div class="col-6 col-md-4 col-lg-3">
+      <a class="surface-card table-tile border {% if table.is_occupied %}occupied{% endif %}"
+         href="{% url 'staff_table_detail' table.id %}">
+        <div class="number">{{ table.number }}</div>
+        <div class="text-secondary small">{{ table.seats }} мест</div>
+        {% if table.is_occupied %}
+          <span class="badge text-bg-warning">{{ table.open_order.get_status_display }}</span>
+        {% else %}
+          <span class="badge text-bg-success">свободен</span>
+        {% endif %}
+      </a>
+    </div>
   {% empty %}
-    <div class="card"><div class="empty">Столы ещё не созданы.</div></div>
+    <div class="col-12">
+      <div class="surface-card"><div class="empty-state">Столы ещё не созданы.</div></div>
+    </div>
   {% endfor %}
 </div>
 {% endblock %}

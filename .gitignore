@@ -46,7 +46,16 @@ docker-compose.override.yml
 db.sqlite3
 media/*
 !media/.gitkeep
+# Корневая папка static/ — не источник; статика живёт в приложениях и в staticfiles/
+/static/
 staticfiles/
+# Медиа и фото не коммитим
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.webp
+*.ico
 
 # IDE / OS
 .idea/

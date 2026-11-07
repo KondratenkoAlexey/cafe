@@ -1,7 +1,9 @@
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from accounts.decorators import admin_required, cook_required, staff_required, waiter_required
@@ -22,6 +24,13 @@ from .orders import (
     set_item_cooking,
     set_item_ready,
 )
+
+
+def _menu_manage_url(category_id=None):
+    url = reverse("staff_menu_manage")
+    if category_id:
+        return f"{url}?open={category_id}"
+    return url
 
 
 def staff_login(request):
@@ -216,7 +225,12 @@ def staff_item_ready(request, item_id):
 @admin_required
 def staff_menu_manage(request):
     categories = Category.objects.prefetch_related("items").order_by("sort_order", "name")
-    return render(request, "staff/menu_manage.html", {"categories": categories})
+    open_category = request.GET.get("open")
+    return render(
+        request,
+        "staff/menu_manage.html",
+        {"categories": categories, "open_category": open_category},
+    )
 
 
 @admin_required
@@ -237,10 +251,11 @@ def staff_category_save(request):
         category.is_active = is_active
         category.save()
         messages.success(request, "Категория обновлена.")
-    else:
-        Category.objects.create(name=name, sort_order=sort_order, is_active=is_active)
-        messages.success(request, "Категория создана.")
-    return redirect("staff_menu_manage")
+        return redirect(_menu_manage_url(category.id))
+
+    category = Category.objects.create(name=name, sort_order=sort_order, is_active=is_active)
+    messages.success(request, "Категория создана.")
+    return redirect(_menu_manage_url(category.id))
 
 
 @admin_required
@@ -257,7 +272,7 @@ def staff_item_save(request):
 
     if not name:
         messages.error(request, "Укажите название блюда.")
-        return redirect("staff_menu_manage")
+        return redirect(_menu_manage_url(category.id))
 
     if item_id:
         item = get_object_or_404(MenuItem, pk=item_id)
@@ -266,6 +281,7 @@ def staff_item_save(request):
 
     item.category = category
     item.name = name
+    item.portion = request.POST.get("portion", "").strip()
     item.description = description
     item.price = price
     item.sort_order = sort_order
@@ -274,7 +290,7 @@ def staff_item_save(request):
         item.photo = photo
     item.save()
     messages.success(request, "Блюдо сохранено.")
-    return redirect("staff_menu_manage")
+    return redirect(_menu_manage_url(category.id))
 
 
 @admin_required
@@ -285,7 +301,25 @@ def staff_item_toggle(request, item_id):
     item.save(update_fields=["is_available"])
     status = "в меню" if item.is_available else "в стоп-листе"
     messages.success(request, f"{item.name}: {status}")
-    return redirect("staff_menu_manage")
+    return redirect(_menu_manage_url(item.category_id))
+
+
+@admin_required
+@require_POST
+def staff_item_delete(request, item_id):
+    item = get_object_or_404(MenuItem, pk=item_id)
+    category_id = item.category_id
+    name = item.name
+    try:
+        item.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            f'Нельзя удалить «{name}»: блюдо уже есть в заказах. Снимите его в стоп-лист.',
+        )
+        return redirect(_menu_manage_url(category_id))
+    messages.success(request, f'Блюдо «{name}» удалено.')
+    return redirect(_menu_manage_url(category_id))
 
 
 @admin_required
@@ -325,6 +359,23 @@ def staff_table_save(request):
 
 @admin_required
 @require_POST
+def staff_table_delete(request, table_id):
+    table = get_object_or_404(DiningTable, pk=table_id)
+    number = table.number
+    try:
+        table.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            f"Нельзя удалить стол {number}: по нему есть заказы. Сделайте стол неактивным.",
+        )
+        return redirect("staff_settings")
+    messages.success(request, f"Стол {number} удалён.")
+    return redirect("staff_settings")
+
+
+@admin_required
+@require_POST
 def staff_user_save(request):
     user_id = request.POST.get("user_id")
     username = request.POST.get("username", "").strip()
@@ -358,4 +409,24 @@ def staff_user_save(request):
         user.set_password(password)
         user.save()
         messages.success(request, "Сотрудник создан.")
+    return redirect("staff_settings")
+
+
+@admin_required
+@require_POST
+def staff_user_delete(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    if user.pk == request.user.pk:
+        messages.error(request, "Нельзя удалить свою учётную запись.")
+        return redirect("staff_settings")
+    username = user.username
+    try:
+        user.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            f"Нельзя удалить «{username}»: сотрудник связан с заказами. Сделайте учётку неактивной.",
+        )
+        return redirect("staff_settings")
+    messages.success(request, f"Сотрудник «{username}» удалён.")
     return redirect("staff_settings")

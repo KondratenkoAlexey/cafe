@@ -8,6 +8,8 @@ MENU_CACHE_KEY = "menu:public"
 
 class Category(models.Model):
     name = models.CharField("Название", max_length=100)
+    subtitle = models.CharField("Подзаголовок", max_length=200, blank=True)
+    icon = models.CharField("Иконка", max_length=16, blank=True, default="")
     sort_order = models.PositiveIntegerField("Порядок", default=0)
     is_active = models.BooleanField("Активна", default=True)
 
@@ -19,6 +21,10 @@ class Category(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    @property
+    def available_items_count(self) -> int:
+        return self.items.filter(is_available=True).count()
+
 
 class MenuItem(models.Model):
     category = models.ForeignKey(
@@ -28,6 +34,7 @@ class MenuItem(models.Model):
         verbose_name="Категория",
     )
     name = models.CharField("Название", max_length=150)
+    portion = models.CharField("Выход", max_length=40, blank=True, help_text="Например: 250 г")
     description = models.TextField("Описание", blank=True)
     price = models.DecimalField("Цена", max_digits=10, decimal_places=2)
     photo = models.ImageField("Фото", upload_to="menu/", blank=True)
@@ -45,6 +52,11 @@ class MenuItem(models.Model):
 
 def invalidate_menu_cache(**_kwargs) -> None:
     cache.delete(MENU_CACHE_KEY)
+    cache.delete(f"{MENU_CACHE_KEY}:categories")
+    # Сбрасываем кэш страниц категорий (безопасный широкий сброс через delete_many недоступен
+    # без знания id — чистим по известным активным категориям).
+    for category_id in Category.objects.values_list("id", flat=True):
+        cache.delete(f"{MENU_CACHE_KEY}:category:{category_id}")
 
 
 @receiver(post_save, sender=Category)

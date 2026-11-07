@@ -8,9 +8,10 @@ __pycache__
 .coverage
 htmlcov
 db.sqlite3
-media/*
-!media/.gitkeep
+media
+static
 staticfiles
+menu/seed_photos
 README.md
 .cursor
 agent-transcripts

@@ -230,6 +230,126 @@ h1, h2, h3, h4, .navbar-brand, .display-font {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.admin-tile {
+  height: 100%;
+  padding: 1.1rem 1.15rem;
+  border-radius: 1rem;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 12px 32px rgba(0, 26, 64, 0.22);
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.admin-tile-photo {
+  width: 4.5rem;
+  height: 4.5rem;
+  flex-shrink: 0;
+  border-radius: 0.75rem;
+  object-fit: cover;
+  background: linear-gradient(135deg, var(--cobalt-100), var(--cobalt-50));
+}
+
+.admin-tile-photo-empty {
+  display: grid;
+  place-items: center;
+  color: var(--cobalt-700);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-align: center;
+  padding: 0.25rem;
+}
+
+.admin-tile-main {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-tile-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--cobalt-900);
+  margin: 0;
+}
+
+.admin-tile-meta {
+  color: #5a6f8c;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.admin-tile-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.admin-tile-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.admin-icon-btn {
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 0.65rem;
+}
+
+.admin-icon-btn svg {
+  display: block;
+}
+
+.admin-tile.is-inactive {
+  opacity: 0.72;
+}
+
+.history-metric {
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  background: rgba(0, 71, 171, 0.06);
+  border: 1px solid rgba(0, 71, 171, 0.12);
+  height: 100%;
+}
+
+.history-metric-label {
+  font-size: 0.85rem;
+  color: #5a6f8c;
+  margin-bottom: 0.25rem;
+}
+
+.history-metric-value {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--cobalt-900);
+}
+
+.history-table {
+  color: var(--ink);
+}
+
+.history-table thead th {
+  color: #5a6f8c;
+  font-weight: 600;
+  border-bottom-color: rgba(0, 71, 171, 0.12);
+}
+
 .staff-sidebar-toggle {
   position: fixed;
   top: 0.85rem;
@@ -589,6 +709,59 @@ h1, h2, h3, h4, .navbar-brand, .display-font {
 
 .confirm-modal .modal-body {
   color: #5a6f8c;
+}
+
+/* Scrollable modal + form: футер всегда виден, тело прокручивается отдельно */
+.modal-dialog-scrollable {
+  height: calc(100% - 1rem);
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 576px) {
+  .modal-dialog-scrollable {
+    height: calc(100% - 3.5rem);
+    margin-top: 1.75rem;
+    margin-bottom: 1.75rem;
+  }
+}
+
+.modal-dialog-scrollable .modal-content {
+  max-height: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-dialog-scrollable .modal-content > form {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.modal-dialog-scrollable .modal-content > form .modal-header,
+.modal-dialog-scrollable .modal-content > form .modal-footer {
+  flex: 0 0 auto;
+}
+
+.modal-dialog-scrollable .modal-content > form .modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.modal-dialog-scrollable .modal-content > form .modal-footer {
+  background: #fff;
+  border-top: 1px solid rgba(0, 41, 102, 0.1);
+  padding-top: 0.85rem !important;
+  position: relative;
+  z-index: 2;
 }
 
 .btn-danger {

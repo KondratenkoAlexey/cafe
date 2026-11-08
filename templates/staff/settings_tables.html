@@ -3,70 +3,121 @@
 {% block title %}Столы · Настройки{% endblock %}
 
 {% block content %}
-<section class="page-hero">
-  <h1>Столы</h1>
-  <p>Номера, вместимость и активность столов в зале.</p>
+<section class="page-hero d-flex flex-wrap justify-content-between align-items-start gap-3">
+  <div>
+    <h1>Столы</h1>
+    <p>Номера, вместимость и активность столов в зале.</p>
+  </div>
+  <button class="btn btn-primary btn-touch" type="button" data-bs-toggle="modal" data-bs-target="#createTableModal">
+    Добавить стол
+  </button>
 </section>
 
-<section class="surface-card p-4">
-  <div class="staff-record staff-record-create">
-    <div class="staff-record-title">Новый стол</div>
-    <form method="post" action="{% url 'staff_table_save' %}" class="row g-3">
-      {% csrf_token %}
-      <div class="col-md-4">
-        <label class="form-label">Номер</label>
-        <input class="form-control" type="number" name="number" min="1" required>
-      </div>
-      <div class="col-md-4">
-        <label class="form-label">Мест</label>
-        <input class="form-control" type="number" name="seats" min="1" value="4" required>
-      </div>
-      <div class="col-md-4 d-flex align-items-end">
-        <div class="form-check mb-2">
-          <input class="form-check-input" type="checkbox" name="is_active" id="table_active_new" checked>
-          <label class="form-check-label" for="table_active_new">Активен</label>
-        </div>
-      </div>
-      <div class="col-12">
-        <button class="btn btn-primary btn-touch" type="submit">Добавить стол</button>
-      </div>
-    </form>
-  </div>
-
+<div class="row g-3">
   {% for table in tables %}
-    <div class="staff-record">
-      <div class="staff-record-title">Стол {{ table.number }}</div>
-      <form method="post" action="{% url 'staff_table_save' %}" class="row g-3">
-        {% csrf_token %}
-        <input type="hidden" name="table_id" value="{{ table.id }}">
-        <div class="col-md-4">
-          <label class="form-label">Номер</label>
-          <input class="form-control" type="number" name="number" value="{{ table.number }}" min="1" required>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label">Мест</label>
-          <input class="form-control" type="number" name="seats" value="{{ table.seats }}" min="1" required>
-        </div>
-        <div class="col-md-4 d-flex align-items-end">
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" name="is_active" id="table_active_{{ table.id }}" {% if table.is_active %}checked{% endif %}>
-            <label class="form-check-label" for="table_active_{{ table.id }}">Активен</label>
+    <div class="col-6 col-md-4 col-xl-3">
+      <div class="admin-tile {% if not table.is_active %}is-inactive{% endif %}">
+        <div class="admin-tile-main">
+          <h2 class="admin-tile-title">Стол {{ table.number }}</h2>
+          <div class="admin-tile-meta">
+            {{ table.seats }} мест<br>
+            {% if table.is_active %}Активен{% else %}Неактивен{% endif %}
           </div>
         </div>
-        <div class="col-12 d-flex flex-wrap gap-2">
-          <button class="btn btn-outline-primary btn-touch" type="submit">Сохранить стол {{ table.number }}</button>
+        <div class="admin-tile-actions">
+          <div class="admin-tile-actions-row">
+            <button class="btn btn-outline-primary admin-icon-btn btn-touch" type="button"
+                    data-bs-toggle="modal" data-bs-target="#editTableModal{{ table.id }}"
+                    title="Изменить" aria-label="Изменить стол {{ table.number }}">
+              {% include "staff/partials/icon_edit.svg.html" %}
+            </button>
+            <form method="post" action="{% url 'staff_table_delete' table.id %}"
+                  data-confirm-title="Удалить стол?"
+                  data-confirm-message="Стол {{ table.number }} будет удалён. Если по нему есть заказы, удаление будет отклонено."
+                  data-confirm-button="Удалить стол">
+              {% csrf_token %}
+              <button class="btn btn-outline-danger admin-icon-btn btn-touch" type="submit"
+                      title="Удалить" aria-label="Удалить стол {{ table.number }}">
+                {% include "staff/partials/icon_delete.svg.html" %}
+              </button>
+            </form>
+          </div>
         </div>
-      </form>
-      <form method="post" action="{% url 'staff_table_delete' table.id %}" class="mt-2"
-            data-confirm-title="Удалить стол?"
-            data-confirm-message="Стол {{ table.number }} будет удалён. Если по нему есть заказы, удаление будет отклонено."
-            data-confirm-button="Удалить стол">
-        {% csrf_token %}
-        <button class="btn btn-outline-danger btn-touch" type="submit">Удалить стол</button>
-      </form>
+      </div>
+    </div>
+
+    <div class="modal fade" id="editTableModal{{ table.id }}" tabindex="-1" aria-labelledby="editTableTitle{{ table.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content confirm-modal">
+          <form method="post" action="{% url 'staff_table_save' %}">
+            {% csrf_token %}
+            <input type="hidden" name="table_id" value="{{ table.id }}">
+            <div class="modal-header border-0 pb-0">
+              <h2 class="modal-title h5" id="editTableTitle{{ table.id }}">Стол {{ table.number }}</h2>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body pt-2"><div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Номер</label>
+                <input class="form-control" type="number" name="number" value="{{ table.number }}" min="1" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Мест</label>
+                <input class="form-control" type="number" name="seats" value="{{ table.seats }}" min="1" required>
+              </div>
+              <div class="col-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="is_active" id="table_active_{{ table.id }}" {% if table.is_active %}checked{% endif %}>
+                  <label class="form-check-label" for="table_active_{{ table.id }}">Активен</label>
+                </div>
+              </div></div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+              <button type="button" class="btn btn-outline-secondary btn-touch" data-bs-dismiss="modal">Отмена</button>
+              <button type="submit" class="btn btn-primary btn-touch">Сохранить</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   {% empty %}
-    <div class="empty-state py-3">Столов пока нет.</div>
+    <div class="col-12">
+      <div class="surface-card p-4"><div class="empty-state">Столов пока нет. Нажмите «Добавить стол».</div></div>
+    </div>
   {% endfor %}
-</section>
+</div>
+
+<div class="modal fade" id="createTableModal" tabindex="-1" aria-labelledby="createTableTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content confirm-modal">
+      <form method="post" action="{% url 'staff_table_save' %}">
+        {% csrf_token %}
+        <div class="modal-header border-0 pb-0">
+          <h2 class="modal-title h5" id="createTableTitle">Новый стол</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body pt-2"><div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Номер</label>
+            <input class="form-control" type="number" name="number" min="1" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Мест</label>
+            <input class="form-control" type="number" name="seats" min="1" value="4" required>
+          </div>
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="is_active" id="table_active_new" checked>
+              <label class="form-check-label" for="table_active_new">Активен</label>
+            </div>
+          </div></div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary btn-touch" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary btn-touch">Создать</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}

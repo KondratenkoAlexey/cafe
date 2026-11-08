@@ -167,6 +167,7 @@ docker compose down -v       # удалить и данные БД
 | `/staff/tables/` | Официант | Столы и заказы |
 | `/staff/reservations/` | Официант | Брони |
 | `/staff/kitchen/` | Повар | Очередь кухни |
+| `/staff/orders/history/` | Админ | История заказов и сумма за период |
 | `/staff/menu/dishes/` | Админ | Блюда |
 | `/staff/menu/categories/` | Админ | Категории |
 | `/staff/settings/tables/` | Админ | Столы зала |

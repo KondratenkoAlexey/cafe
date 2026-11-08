@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}История заказов · Кафе{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <h1>История заказов</h1>
+  <p>Оплаченные заказы и сумма выручки за выбранный период.</p>
+</section>
+
+<section class="surface-card p-4 mb-4">
+  <form method="get" class="row g-3 align-items-end" id="historyFilter">
+    <div class="col-md-3">
+      <label class="form-label" for="date_from">С даты</label>
+      <input class="form-control" type="date" name="date_from" id="date_from" value="{{ date_from }}" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label" for="date_to">По дату</label>
+      <input class="form-control" type="date" name="date_to" id="date_to" value="{{ date_to }}" required>
+    </div>
+    <div class="col-md-3">
+      <button class="btn btn-primary btn-touch w-100" type="submit">Показать</button>
+    </div>
+    <div class="col-md-3 d-flex flex-wrap gap-2">
+      {% for key, label, start, end in presets %}
+        <a class="btn btn-outline-primary btn-touch"
+           href="?date_from={{ start|date:'Y-m-d' }}&date_to={{ end|date:'Y-m-d' }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </form>
+</section>
+
+<section class="surface-card p-4 mb-4">
+  <div class="row g-3 history-summary">
+    <div class="col-6 col-lg-3">
+      <div class="history-metric">
+        <div class="history-metric-label">Заказов</div>
+        <div class="history-metric-value">{{ orders_count }}</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="history-metric">
+        <div class="history-metric-label">Сумма</div>
+        <div class="history-metric-value">{{ total_sum }} Br</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="history-metric">
+        <div class="history-metric-label">Наличные</div>
+        <div class="history-metric-value">{{ cash_sum }} Br</div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="history-metric">
+        <div class="history-metric-label">Карта</div>
+        <div class="history-metric-value">{{ card_sum }} Br</div>
+      </div>
+    </div>
+  </div>
+  <div class="text-secondary small mt-3">В том числе НДС: {{ vat_sum }} Br</div>
+</section>
+
+<section class="surface-card p-4">
+  <h2 class="staff-panel-title">Список за период</h2>
+  {% if receipts %}
+    <div class="table-responsive">
+      <table class="table align-middle mb-0 history-table">
+        <thead>
+          <tr>
+            <th>Время</th>
+            <th>Чек</th>
+            <th>Стол</th>
+            <th>Официант</th>
+            <th>Оплата</th>
+            <th class="text-end">Сумма</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for receipt in receipts %}
+            <tr>
+              <td>{{ receipt.paid_at|date:"d.m.Y H:i" }}</td>
+              <td>{{ receipt.number }}</td>
+              <td>{{ receipt.table_number }}</td>
+              <td>{{ receipt.waiter_name }}</td>
+              <td>{{ receipt.get_payment_method_display }}</td>
+              <td class="text-end fw-semibold">{{ receipt.total }} Br</td>
+              <td class="text-end">
+                <a class="btn btn-outline-primary btn-sm btn-touch" href="{% url 'staff_receipt' receipt.id %}">Чек</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty-state py-3">За выбранный период оплаченных заказов нет.</div>
+  {% endif %}
+</section>
+{% endblock %}

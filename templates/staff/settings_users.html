@@ -3,96 +3,148 @@
 {% block title %}Сотрудники · Настройки{% endblock %}
 
 {% block content %}
-<section class="page-hero">
-  <h1>Сотрудники</h1>
-  <p>Учётные записи официантов, поваров и администраторов.</p>
+<section class="page-hero d-flex flex-wrap justify-content-between align-items-start gap-3">
+  <div>
+    <h1>Сотрудники</h1>
+    <p>Учётные записи официантов, поваров и администраторов.</p>
+  </div>
+  <button class="btn btn-primary btn-touch" type="button" data-bs-toggle="modal" data-bs-target="#createUserModal">
+    Добавить сотрудника
+  </button>
 </section>
 
-<section class="surface-card p-4">
-  <div class="staff-record staff-record-create">
-    <div class="staff-record-title">Новый сотрудник</div>
-    <form method="post" action="{% url 'staff_user_save' %}" class="row g-3">
-      {% csrf_token %}
-      <div class="col-md-6">
-        <label class="form-label">Логин</label>
-        <input class="form-control" type="text" name="username" required>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Имя</label>
-        <input class="form-control" type="text" name="first_name">
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Роль</label>
-        <select class="form-select" name="role">
-          {% for value, label in roles %}
-            <option value="{{ value }}">{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="col-md-6">
-        <label class="form-label">Пароль</label>
-        <input class="form-control" type="password" name="password" required>
-      </div>
-      <div class="col-12">
-        <div class="form-check">
-          <input class="form-check-input" type="checkbox" name="is_active" id="user_active_new" checked>
-          <label class="form-check-label" for="user_active_new">Активен</label>
-        </div>
-      </div>
-      <div class="col-12">
-        <button class="btn btn-primary btn-touch" type="submit">Создать сотрудника</button>
-      </div>
-    </form>
-  </div>
-
+<div class="row g-3">
   {% for staff_user in users %}
-    <div class="staff-record">
-      <div class="staff-record-title">{{ staff_user.username }}{% if staff_user.first_name %} · {{ staff_user.first_name }}{% endif %}</div>
-      <form method="post" action="{% url 'staff_user_save' %}" class="row g-3">
-        {% csrf_token %}
-        <input type="hidden" name="user_id" value="{{ staff_user.id }}">
-        <div class="col-md-6">
-          <label class="form-label">Логин</label>
-          <input class="form-control" type="text" name="username" value="{{ staff_user.username }}" required>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Имя</label>
-          <input class="form-control" type="text" name="first_name" value="{{ staff_user.first_name }}">
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Роль</label>
-          <select class="form-select" name="role">
-            {% for value, label in roles %}
-              <option value="{{ value }}" {% if staff_user.role == value %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Новый пароль</label>
-          <input class="form-control" type="password" name="password" placeholder="оставьте пустым, чтобы не менять">
-        </div>
-        <div class="col-12">
-          <div class="form-check">
-            <input class="form-check-input" type="checkbox" name="is_active" id="user_active_{{ staff_user.id }}" {% if staff_user.is_active %}checked{% endif %}>
-            <label class="form-check-label" for="user_active_{{ staff_user.id }}">Активен</label>
+    <div class="col-md-6 col-xl-4">
+      <div class="admin-tile {% if not staff_user.is_active %}is-inactive{% endif %}">
+        <div class="admin-tile-main">
+          <h2 class="admin-tile-title">{{ staff_user.username }}</h2>
+          <div class="admin-tile-meta">
+            {% if staff_user.first_name %}{{ staff_user.first_name }}<br>{% endif %}
+            {{ staff_user.get_role_display }}<br>
+            {% if staff_user.is_active %}Активен{% else %}Неактивен{% endif %}
           </div>
         </div>
-        <div class="col-12 d-flex flex-wrap gap-2">
-          <button class="btn btn-outline-primary btn-touch" type="submit">Сохранить {{ staff_user.username }}</button>
+        <div class="admin-tile-actions">
+          <div class="admin-tile-actions-row">
+            <button class="btn btn-outline-primary admin-icon-btn btn-touch" type="button"
+                    data-bs-toggle="modal" data-bs-target="#editUserModal{{ staff_user.id }}"
+                    title="Изменить" aria-label="Изменить {{ staff_user.username }}">
+              {% include "staff/partials/icon_edit.svg.html" %}
+            </button>
+            {% if staff_user.id != user.id %}
+              <form method="post" action="{% url 'staff_user_delete' staff_user.id %}"
+                    data-confirm-title="Удалить сотрудника?"
+                    data-confirm-message="Сотрудник «{{ staff_user.username }}» будет удалён. Если есть связанные заказы, удаление будет отклонено."
+                    data-confirm-button="Удалить">
+                {% csrf_token %}
+                <button class="btn btn-outline-danger admin-icon-btn btn-touch" type="submit"
+                        title="Удалить" aria-label="Удалить {{ staff_user.username }}">
+                  {% include "staff/partials/icon_delete.svg.html" %}
+                </button>
+              </form>
+            {% endif %}
+          </div>
         </div>
-      </form>
-      {% if staff_user.id != user.id %}
-        <form method="post" action="{% url 'staff_user_delete' staff_user.id %}" class="mt-2"
-              data-confirm-title="Удалить сотрудника?"
-              data-confirm-message="Сотрудник «{{ staff_user.username }}» будет удалён. Если есть связанные заказы, удаление будет отклонено."
-              data-confirm-button="Удалить">
-          {% csrf_token %}
-          <button class="btn btn-outline-danger btn-touch" type="submit">Удалить</button>
-        </form>
-      {% endif %}
+      </div>
+    </div>
+
+    <div class="modal fade" id="editUserModal{{ staff_user.id }}" tabindex="-1" aria-labelledby="editUserTitle{{ staff_user.id }}" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content confirm-modal">
+          <form method="post" action="{% url 'staff_user_save' %}">
+            {% csrf_token %}
+            <input type="hidden" name="user_id" value="{{ staff_user.id }}">
+            <div class="modal-header border-0 pb-0">
+              <h2 class="modal-title h5" id="editUserTitle{{ staff_user.id }}">{{ staff_user.username }}</h2>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body pt-2"><div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Логин</label>
+                <input class="form-control" type="text" name="username" value="{{ staff_user.username }}" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Имя</label>
+                <input class="form-control" type="text" name="first_name" value="{{ staff_user.first_name }}">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Роль</label>
+                <select class="form-select" name="role">
+                  {% for value, label in roles %}
+                    <option value="{{ value }}" {% if staff_user.role == value %}selected{% endif %}>{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Новый пароль</label>
+                <input class="form-control" type="password" name="password" placeholder="оставьте пустым, чтобы не менять">
+              </div>
+              <div class="col-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="is_active" id="user_active_{{ staff_user.id }}" {% if staff_user.is_active %}checked{% endif %}>
+                  <label class="form-check-label" for="user_active_{{ staff_user.id }}">Активен</label>
+                </div>
+              </div></div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+              <button type="button" class="btn btn-outline-secondary btn-touch" data-bs-dismiss="modal">Отмена</button>
+              <button type="submit" class="btn btn-primary btn-touch">Сохранить</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   {% empty %}
-    <div class="empty-state py-3">Сотрудников пока нет.</div>
+    <div class="col-12">
+      <div class="surface-card p-4"><div class="empty-state">Сотрудников пока нет. Нажмите «Добавить сотрудника».</div></div>
+    </div>
   {% endfor %}
-</section>
+</div>
+
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content confirm-modal">
+      <form method="post" action="{% url 'staff_user_save' %}">
+        {% csrf_token %}
+        <div class="modal-header border-0 pb-0">
+          <h2 class="modal-title h5" id="createUserTitle">Новый сотрудник</h2>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <div class="modal-body pt-2"><div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Логин</label>
+            <input class="form-control" type="text" name="username" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Имя</label>
+            <input class="form-control" type="text" name="first_name">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Роль</label>
+            <select class="form-select" name="role">
+              {% for value, label in roles %}
+                <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Пароль</label>
+            <input class="form-control" type="password" name="password" required>
+          </div>
+          <div class="col-12">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" name="is_active" id="user_active_new" checked>
+              <label class="form-check-label" for="user_active_new">Активен</label>
+            </div>
+          </div></div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary btn-touch" data-bs-dismiss="modal">Отмена</button>
+          <button type="submit" class="btn btn-primary btn-touch">Создать</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}

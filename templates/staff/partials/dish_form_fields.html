@@ -1,0 +1,60 @@
+{# Expects: categories, and optional item #}
+<div class="col-12">
+  <label class="form-label">Категория</label>
+  <select class="form-select" name="category_id" required>
+    {% for category in categories %}
+      <option value="{{ category.id }}" {% if item and item.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+<div class="col-12">
+  <label class="form-label">Название</label>
+  <input class="form-control" type="text" name="name" value="{{ item.name|default:'' }}" required>
+</div>
+<div class="col-md-6">
+  <label class="form-label">Выход</label>
+  <input class="form-control" type="text" name="portion" value="{{ item.portion|default:'' }}" placeholder="250 г">
+</div>
+<div class="col-md-6">
+  <label class="form-label">Цена, Br</label>
+  <input class="form-control" type="text" name="price" value="{% if item %}{{ item.price }}{% endif %}" required>
+</div>
+<div class="col-12">
+  <label class="form-label">Описание</label>
+  <textarea class="form-control" name="description" rows="2">{{ item.description|default:'' }}</textarea>
+</div>
+<div class="col-12">
+  <label class="form-label">Состав</label>
+  <textarea class="form-control" name="ingredients" rows="2">{{ item.ingredients|default:'' }}</textarea>
+</div>
+<div class="col-md-4">
+  <label class="form-label">Ккал</label>
+  <input class="form-control" type="number" name="calories" min="0" value="{% if item %}{{ item.calories|default_if_none:'' }}{% endif %}">
+</div>
+<div class="col-md-4">
+  <label class="form-label">Время, мин</label>
+  <input class="form-control" type="number" name="cooking_time" min="0" value="{% if item %}{{ item.cooking_time|default_if_none:'' }}{% endif %}">
+</div>
+<div class="col-md-4">
+  <label class="form-label">Аллергены</label>
+  <input class="form-control" type="text" name="allergens" value="{{ item.allergens|default:'' }}" placeholder="молоко, глютен">
+</div>
+<div class="col-12">
+  <label class="form-label">Рецепт</label>
+  <textarea class="form-control" name="recipe" rows="3" placeholder="Шаги приготовления для кухни">{{ item.recipe|default:'' }}</textarea>
+</div>
+<div class="col-md-6">
+  <label class="form-label">Порядок</label>
+  <input class="form-control" type="number" name="sort_order" value="{% if item %}{{ item.sort_order }}{% else %}0{% endif %}">
+</div>
+<div class="col-md-6">
+  <label class="form-label">Фото</label>
+  <input class="form-control" type="file" name="photo" accept="image/*">
+</div>
+<div class="col-12">
+  <div class="form-check">
+    <input class="form-check-input" type="checkbox" name="is_available" id="item_avail_{{ avail_id }}"
+           {% if not item or item.is_available %}checked{% endif %}>
+    <label class="form-check-label" for="item_avail_{{ avail_id }}">В наличии</label>
+  </div>
+</div>

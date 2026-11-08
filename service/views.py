@@ -1,14 +1,16 @@
-from datetime import datetime
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Sum
 from django.db.models.deletion import ProtectedError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_date, parse_datetime
 from django.views.decorators.http import require_GET, require_POST
 
 from accounts.decorators import admin_required, cook_required, staff_required, waiter_required
@@ -62,6 +64,18 @@ def _reservation_form_context(extra=None):
     if extra:
         context.update(extra)
     return context
+
+
+def _parse_history_day(value: str, *, end_of_day: bool = False):
+    parsed = parse_date((value or "").strip())
+    if parsed is None:
+        return None
+    dt = datetime.combine(parsed, datetime.max.time() if end_of_day else datetime.min.time())
+    if end_of_day:
+        dt = dt.replace(microsecond=0)
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt, timezone.get_current_timezone())
+    return dt
 
 
 def _dishes_url(category_id=None):
@@ -416,6 +430,61 @@ def staff_item_ready(request, item_id):
 
 
 @admin_required
+def staff_order_history(request):
+    today = timezone.localdate()
+    date_from_raw = request.GET.get("date_from", "").strip() or today.isoformat()
+    date_to_raw = request.GET.get("date_to", "").strip() or today.isoformat()
+
+    date_from = _parse_history_day(date_from_raw)
+    date_to = _parse_history_day(date_to_raw, end_of_day=True)
+    if date_from is None or date_to is None:
+        messages.error(request, "Укажите корректный период.")
+        date_from_raw = today.isoformat()
+        date_to_raw = today.isoformat()
+        date_from = _parse_history_day(date_from_raw)
+        date_to = _parse_history_day(date_to_raw, end_of_day=True)
+    elif date_from > date_to:
+        date_from_raw, date_to_raw = date_to_raw, date_from_raw
+        date_from = _parse_history_day(date_from_raw)
+        date_to = _parse_history_day(date_to_raw, end_of_day=True)
+
+    receipts = (
+        Receipt.objects.filter(paid_at__gte=date_from, paid_at__lte=date_to)
+        .select_related("order", "order__table", "order__waiter")
+        .order_by("-paid_at")
+    )
+    aggregates = receipts.aggregate(
+        orders_count=Count("id"),
+        total_sum=Sum("total"),
+        vat_sum=Sum("vat_amount"),
+    )
+    by_method = {
+        row["payment_method"]: row["total"]
+        for row in receipts.values("payment_method").annotate(total=Sum("total"))
+    }
+
+    return render(
+        request,
+        "staff/order_history.html",
+        {
+            "receipts": receipts,
+            "date_from": date_from_raw,
+            "date_to": date_to_raw,
+            "orders_count": aggregates["orders_count"] or 0,
+            "total_sum": aggregates["total_sum"] or Decimal("0.00"),
+            "vat_sum": aggregates["vat_sum"] or Decimal("0.00"),
+            "cash_sum": by_method.get(Receipt.PaymentMethod.CASH, Decimal("0.00")),
+            "card_sum": by_method.get(Receipt.PaymentMethod.CARD, Decimal("0.00")),
+            "presets": [
+                ("today", "Сегодня", today, today),
+                ("week", "7 дней", today - timedelta(days=6), today),
+                ("month", "30 дней", today - timedelta(days=29), today),
+            ],
+        },
+    )
+
+
+@admin_required
 def staff_menu_manage(request):
     return redirect("staff_menu_dishes")
 
@@ -458,6 +527,23 @@ def staff_category_save(request):
     else:
         Category.objects.create(name=name, sort_order=sort_order, is_active=is_active)
         messages.success(request, "Категория создана.")
+    return redirect("staff_menu_categories")
+
+
+@admin_required
+@require_POST
+def staff_category_delete(request, category_id):
+    category = get_object_or_404(Category, pk=category_id)
+    name = category.name
+    try:
+        category.delete()
+    except ProtectedError:
+        messages.error(
+            request,
+            f'Нельзя удалить «{name}»: в категории есть блюда. Сначала удалите или перенесите блюда.',
+        )
+        return redirect("staff_menu_categories")
+    messages.success(request, f'Категория «{name}» удалена.')
     return redirect("staff_menu_categories")
 
 

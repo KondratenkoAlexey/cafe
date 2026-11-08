@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Рецепт · {{ dish.name }}{% endblock %}
+
+{% block content %}
+<section class="page-hero d-flex flex-wrap justify-content-between align-items-start gap-3">
+  <div>
+    <h1>{{ dish.name }}</h1>
+    <p>Стол {{ item.order.table.number }} · {{ item.quantity }} порц. · {{ item.get_status_display }}</p>
+  </div>
+  <a class="btn btn-outline-light btn-touch" href="{% url 'staff_kitchen' %}">К очереди</a>
+</section>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <section class="surface-card p-4 h-100">
+      {% if dish.photo %}
+        <img class="menu-photo rounded mb-3" src="{{ dish.photo.url }}" alt="{{ dish.name }}">
+      {% endif %}
+      {% if item.note %}
+        <div class="alert alert-warning mb-3">Комментарий: {{ item.note }}</div>
+      {% endif %}
+      <ul class="list-unstyled dish-facts mb-0">
+        {% if dish.portion %}<li><strong>Выход:</strong> {{ dish.portion }}</li>{% endif %}
+        {% if dish.cooking_time %}<li><strong>Время:</strong> {{ dish.cooking_time }} мин</li>{% endif %}
+        {% if dish.calories %}<li><strong>Калорийность:</strong> {{ dish.calories }} ккал</li>{% endif %}
+        {% if dish.allergens %}<li><strong>Аллергены:</strong> {{ dish.allergens }}</li>{% endif %}
+      </ul>
+    </section>
+  </div>
+  <div class="col-lg-7">
+    <section class="surface-card p-4 h-100">
+      <h2 class="staff-panel-title">Ингредиенты</h2>
+      <p class="mb-4">{% if dish.ingredients %}{{ dish.ingredients }}{% else %}Состав не указан.{% endif %}</p>
+      <h2 class="staff-panel-title">Рецепт приготовления</h2>
+      {% if dish.recipe %}
+        <pre class="recipe-text mb-0">{{ dish.recipe }}</pre>
+      {% else %}
+        <p class="text-secondary mb-0">Рецепт пока не заполнен.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

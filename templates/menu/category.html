@@ -14,7 +14,18 @@
 <div class="row g-3 g-lg-4">
   {% for item in items %}
     <div class="col-12 col-sm-6 col-lg-4">
-      <article class="surface-card menu-item-card {% if not item.is_available %}unavailable{% endif %}">
+      <button type="button"
+              class="surface-card menu-item-card text-start w-100 border-0 p-0 {% if not item.is_available %}unavailable{% endif %}"
+              data-dish-modal
+              data-name="{{ item.name }}"
+              data-description="{{ item.description }}"
+              data-portion="{{ item.portion }}"
+              data-ingredients="{{ item.ingredients }}"
+              data-calories="{{ item.calories|default_if_none:'' }}"
+              data-allergens="{{ item.allergens }}"
+              data-cooking-time="{{ item.cooking_time|default_if_none:'' }}"
+              data-price="{{ item.price }}"
+              {% if item.photo %}data-photo="{{ item.photo.url }}"{% endif %}>
         {% if item.photo %}
           <img class="menu-photo" src="{{ item.photo.url }}" alt="{{ item.name }}">
         {% else %}
@@ -35,7 +46,7 @@
           {% endif %}
           <div class="price mt-auto">{{ item.price }} Br</div>
         </div>
-      </article>
+      </button>
     </div>
   {% empty %}
     <div class="col-12">

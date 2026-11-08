@@ -1,5 +1,6 @@
 """Django settings for the cafe project."""
 
+from decimal import Decimal
 from pathlib import Path
 
 import environ
@@ -124,3 +125,6 @@ CSRF_COOKIE_HTTPONLY = False
 SEED_ADMIN_PASSWORD = env("SEED_ADMIN_PASSWORD", default="admin123")
 SEED_WAITER_PASSWORD = env("SEED_WAITER_PASSWORD", default="waiter123")
 SEED_COOK_PASSWORD = env("SEED_COOK_PASSWORD", default="cook123")
+
+# НДС включён в цену (доля от итоговой суммы).
+VAT_RATE = Decimal(env.str("VAT_RATE", default="0.20"))

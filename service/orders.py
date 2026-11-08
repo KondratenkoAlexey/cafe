@@ -1,10 +1,15 @@
 """Правила смены статусов заказов и позиций."""
 
+from decimal import Decimal, ROUND_HALF_UP
+
+from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils import timezone
+
 from menu.models import MenuItem
 
-from .models import Order, OrderItem
+from .models import Order, OrderItem, Receipt, ReceiptLine
 
 
 class OrderError(ValidationError):
@@ -127,13 +132,64 @@ def mark_order_served(*, order: Order) -> Order:
 
 
 @transaction.atomic
-def mark_order_paid(*, order: Order) -> Order:
-    order = Order.objects.select_for_update().get(pk=order.pk)
+def mark_order_paid(*, order: Order, payment_method: str) -> tuple[Order, Receipt]:
+    order = (
+        Order.objects.select_for_update()
+        .select_related("table", "waiter")
+        .prefetch_related("items")
+        .get(pk=order.pk)
+    )
     if not order.can_mark_paid():
         raise OrderError("Оплатить можно только поданный заказ.")
+    if payment_method not in Receipt.PaymentMethod.values:
+        raise OrderError("Укажите способ оплаты: наличные или карта.")
+    if hasattr(order, "receipt"):
+        raise OrderError("Чек по этому заказу уже создан.")
+
+    lines = [
+        item
+        for item in order.items.all()
+        if item.status != OrderItem.Status.CANCELLED
+    ]
+    if not lines:
+        raise OrderError("Нельзя оплатить пустой заказ.")
+
+    total = order.total
+    vat_rate = Decimal(str(settings.VAT_RATE))
+    vat_amount = (total * vat_rate / (Decimal("1") + vat_rate)).quantize(
+        Decimal("0.01"), rounding=ROUND_HALF_UP
+    )
+    paid_at = timezone.now()
+    number = f"C-{paid_at.strftime('%Y%m%d')}-{order.pk:05d}"
+
     order.status = Order.Status.PAID
     order.save(update_fields=["status", "updated_at"])
-    return order
+
+    receipt = Receipt.objects.create(
+        order=order,
+        number=number,
+        table_number=order.table.number,
+        waiter_name=order.waiter.get_full_name() or order.waiter.username,
+        payment_method=payment_method,
+        total=total,
+        vat_rate=vat_rate,
+        vat_amount=vat_amount,
+        paid_at=paid_at,
+    )
+    ReceiptLine.objects.bulk_create(
+        [
+            ReceiptLine(
+                receipt=receipt,
+                name=item.menu_item.name,
+                quantity=item.quantity,
+                unit_price=item.unit_price,
+                line_total=item.line_total,
+                sort_order=index,
+            )
+            for index, item in enumerate(lines)
+        ]
+    )
+    return order, receipt
 
 
 @transaction.atomic

@@ -60,6 +60,26 @@
           <label class="form-label">Описание</label>
           <textarea class="form-control" name="description" rows="2"></textarea>
         </div>
+        <div class="col-12">
+          <label class="form-label">Состав</label>
+          <textarea class="form-control" name="ingredients" rows="2"></textarea>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Ккал</label>
+          <input class="form-control" type="number" name="calories" min="0">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Время, мин</label>
+          <input class="form-control" type="number" name="cooking_time" min="0">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Аллергены</label>
+          <input class="form-control" type="text" name="allergens" placeholder="молоко, глютен">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Рецепт</label>
+          <textarea class="form-control" name="recipe" rows="3" placeholder="Шаги приготовления для кухни"></textarea>
+        </div>
         <div class="col-md-6">
           <label class="form-label">Цена, Br</label>
           <input class="form-control" type="text" name="price" required>
@@ -157,6 +177,26 @@
                 <div class="col-12">
                   <label class="form-label">Описание</label>
                   <textarea class="form-control" name="description" rows="2">{{ item.description }}</textarea>
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Состав</label>
+                  <textarea class="form-control" name="ingredients" rows="2">{{ item.ingredients }}</textarea>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Ккал</label>
+                  <input class="form-control" type="number" name="calories" min="0" value="{{ item.calories|default_if_none:'' }}">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Время, мин</label>
+                  <input class="form-control" type="number" name="cooking_time" min="0" value="{{ item.cooking_time|default_if_none:'' }}">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Аллергены</label>
+                  <input class="form-control" type="text" name="allergens" value="{{ item.allergens }}">
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Рецепт</label>
+                  <textarea class="form-control" name="recipe" rows="3">{{ item.recipe }}</textarea>
                 </div>
                 <div class="col-md-5">
                   <label class="form-label">Фото</label>

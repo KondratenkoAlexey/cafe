@@ -369,6 +369,57 @@ h1, h2, h3, h4, .navbar-brand, .display-font {
   --bs-btn-hover-border-color: #c94a3c;
 }
 
+.menu-item-card[data-dish-modal] {
+  cursor: pointer;
+}
+
+.dish-facts li {
+  margin-bottom: 0.45rem;
+  color: var(--ink);
+}
+
+.dish-facts strong {
+  color: var(--cobalt-900);
+}
+
+.recipe-text {
+  white-space: pre-wrap;
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--cobalt-50);
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem;
+}
+
+.receipt-sheet .table {
+  color: var(--ink);
+}
+
+.receipt-sheet .table th {
+  color: var(--cobalt-900);
+}
+
+@media print {
+  .navbar,
+  .page-hero,
+  .no-print,
+  .btn,
+  #confirmActionModal,
+  #dishDetailsModal {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .receipt-sheet {
+    box-shadow: none !important;
+    border: 0 !important;
+  }
+}
+
 .kitchen-card {
   border-left: 4px solid var(--cobalt-700) !important;
 }

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Стол {{ table.number }} · Кафе{% endblock %}
 
@@ -72,9 +73,16 @@
               <button class="btn btn-success btn-touch" type="submit">Подано</button>
             </form>
           {% endif %}
+          {% if order.status == 'served' %}
+            <a class="btn btn-outline-primary btn-touch" href="{% url 'staff_bill' order.id %}">Счёт</a>
+          {% endif %}
           {% if order.can_mark_paid %}
-            <form method="post" action="{% url 'staff_mark_paid' order.id %}">
+            <form method="post" action="{% url 'staff_mark_paid' order.id %}" class="d-flex flex-wrap gap-2 align-items-center">
               {% csrf_token %}
+              <select class="form-select" name="payment_method" required style="width: auto; min-width: 10rem;">
+                <option value="cash">Наличные</option>
+                <option value="card">Карта</option>
+              </select>
               <button class="btn btn-success btn-touch" type="submit">Оплачено</button>
             </form>
           {% endif %}
@@ -98,12 +106,20 @@
           <form method="post" action="{% url 'staff_add_item' table.id %}" class="row g-3">
             {% csrf_token %}
             <div class="col-12">
+              <label class="form-label" for="menuSearch">Поиск</label>
+              <input class="form-control form-control-lg" type="search" id="menuSearch"
+                     placeholder="Часть названия блюда или категории" autocomplete="off">
+            </div>
+            <div class="col-12">
               <label class="form-label" for="menu_item_id">Блюдо</label>
               <select class="form-select form-select-lg" name="menu_item_id" id="menu_item_id" required>
                 {% for item in available_items %}
                   <option value="{{ item.id }}">{{ item.category.name }} · {{ item.name }} — {{ item.price }} Br</option>
                 {% endfor %}
               </select>
+            </div>
+            <div class="col-12">
+              <button type="button" class="btn btn-outline-primary btn-touch" id="dishInfoBtn">О блюде</button>
             </div>
             <div class="col-md-4">
               <label class="form-label" for="quantity">Количество</label>
@@ -117,6 +133,21 @@
               <button class="btn btn-primary btn-touch" type="submit">Добавить</button>
             </div>
           </form>
+
+          <div id="waiterDishData" class="d-none">
+            {% for item in available_items %}
+              <div data-item-id="{{ item.id }}"
+                   data-name="{{ item.name }}"
+                   data-description="{{ item.description }}"
+                   data-portion="{{ item.portion }}"
+                   data-ingredients="{{ item.ingredients }}"
+                   data-calories="{{ item.calories|default_if_none:'' }}"
+                   data-allergens="{{ item.allergens }}"
+                   data-cooking-time="{{ item.cooking_time|default_if_none:'' }}"
+                   data-price="{{ item.price }}"
+                   {% if item.photo %}data-photo="{{ item.photo.url }}"{% endif %}></div>
+            {% endfor %}
+          </div>
         {% else %}
           <p class="text-secondary mb-0">Заказ закрыт, добавлять блюда нельзя.</p>
         {% endif %}
@@ -124,4 +155,23 @@
     </div>
   </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/menu-search.js' %}?v=dish10"></script>
+<script>
+(() => {
+  const select = document.getElementById("menu_item_id");
+  const button = document.getElementById("dishInfoBtn");
+  const store = document.getElementById("waiterDishData");
+  if (!select || !button || !store) return;
+
+  button.addEventListener("click", () => {
+    const node = store.querySelector(`[data-item-id="${select.value}"]`);
+    if (!node) return;
+    node.setAttribute("data-dish-modal", "1");
+    node.click();
+  });
+})();
+</script>
 {% endblock %}

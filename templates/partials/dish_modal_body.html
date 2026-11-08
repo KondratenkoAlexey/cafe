@@ -1,0 +1,24 @@
+{% if dish.photo %}
+  <img class="menu-photo rounded mb-3" src="{{ dish.photo.url }}" alt="{{ dish.name }}">
+{% endif %}
+{% if dish.description %}
+  <p class="mb-3">{{ dish.description }}</p>
+{% endif %}
+<ul class="list-unstyled dish-facts mb-0">
+  {% if dish.portion %}
+    <li><strong>Выход:</strong> {{ dish.portion }}</li>
+  {% endif %}
+  {% if dish.ingredients %}
+    <li><strong>Состав:</strong> {{ dish.ingredients }}</li>
+  {% endif %}
+  {% if dish.calories %}
+    <li><strong>Калорийность:</strong> {{ dish.calories }} ккал</li>
+  {% endif %}
+  {% if dish.allergens %}
+    <li><strong>Аллергены:</strong> {{ dish.allergens }}</li>
+  {% endif %}
+  {% if dish.cooking_time %}
+    <li><strong>Время приготовления:</strong> {{ dish.cooking_time }} мин</li>
+  {% endif %}
+  <li><strong>Цена:</strong> {{ dish.price }} Br</li>
+</ul>

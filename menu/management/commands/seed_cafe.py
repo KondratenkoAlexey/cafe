@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 
 from accounts.models import User
 from menu.models import Category, MenuItem, invalidate_menu_cache
+from menu.seed_details import DISH_DETAILS
 from service.models import DiningTable
 
 SEED_PHOTOS = Path(settings.MEDIA_ROOT) / "seed_photos"
@@ -246,24 +247,24 @@ class Command(BaseCommand):
 
         for name, category_name, portion, description, price, sort_order, _photo in MENU_SEED:
             category = categories[category_name]
-            item, created = MenuItem.objects.get_or_create(
-                name=name,
-                defaults={
-                    "category": category,
-                    "portion": portion,
-                    "description": description,
-                    "price": Decimal(price),
-                    "sort_order": sort_order,
-                    "is_available": True,
-                },
-            )
+            details = DISH_DETAILS.get(name, {})
+            defaults = {
+                "category": category,
+                "portion": portion,
+                "description": description,
+                "ingredients": details.get("ingredients", ""),
+                "calories": details.get("calories"),
+                "allergens": details.get("allergens", ""),
+                "cooking_time": details.get("cooking_time"),
+                "recipe": details.get("recipe", ""),
+                "price": Decimal(price),
+                "sort_order": sort_order,
+                "is_available": True,
+            }
+            item, created = MenuItem.objects.get_or_create(name=name, defaults=defaults)
             if not created and refresh:
-                item.category = category
-                item.portion = portion
-                item.description = description
-                item.price = Decimal(price)
-                item.sort_order = sort_order
-                item.is_available = True
+                for field, value in defaults.items():
+                    setattr(item, field, value)
                 item.save()
 
         if refresh:

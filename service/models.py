@@ -151,3 +151,58 @@ class OrderItem(models.Model):
     def clean(self):
         if self.menu_item_id and not self.menu_item.is_available and self.status == self.Status.DRAFT:
             raise ValidationError({"menu_item": "Блюдо сейчас в стоп-листе."})
+
+
+class Receipt(models.Model):
+    class PaymentMethod(models.TextChoices):
+        CASH = "cash", "Наличные"
+        CARD = "card", "Карта"
+
+    order = models.OneToOneField(
+        Order,
+        on_delete=models.PROTECT,
+        related_name="receipt",
+        verbose_name="Заказ",
+    )
+    number = models.CharField("Номер чека", max_length=32, unique=True)
+    table_number = models.PositiveIntegerField("Стол")
+    waiter_name = models.CharField("Официант", max_length=150)
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PaymentMethod.choices,
+        verbose_name="Способ оплаты",
+    )
+    total = models.DecimalField("Итого", max_digits=12, decimal_places=2)
+    vat_rate = models.DecimalField("Ставка НДС", max_digits=5, decimal_places=4)
+    vat_amount = models.DecimalField("Сумма НДС", max_digits=12, decimal_places=2)
+    paid_at = models.DateTimeField("Оплачен", default=timezone.now)
+
+    class Meta:
+        ordering = ["-paid_at"]
+        verbose_name = "Чек"
+        verbose_name_plural = "Чеки"
+
+    def __str__(self) -> str:
+        return f"Чек {self.number}"
+
+
+class ReceiptLine(models.Model):
+    receipt = models.ForeignKey(
+        Receipt,
+        on_delete=models.CASCADE,
+        related_name="lines",
+        verbose_name="Чек",
+    )
+    name = models.CharField("Название", max_length=150)
+    quantity = models.PositiveIntegerField("Количество")
+    unit_price = models.DecimalField("Цена", max_digits=10, decimal_places=2)
+    line_total = models.DecimalField("Сумма", max_digits=12, decimal_places=2)
+    sort_order = models.PositiveIntegerField("Порядок", default=0)
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+        verbose_name = "Строка чека"
+        verbose_name_plural = "Строки чека"
+
+    def __str__(self) -> str:
+        return f"{self.name} × {self.quantity}"

@@ -10,7 +10,7 @@ from accounts.decorators import admin_required, cook_required, staff_required, w
 from accounts.models import User
 from menu.models import Category, MenuItem
 
-from .models import DiningTable, Order, OrderItem
+from .models import DiningTable, Order, OrderItem, Receipt
 from .orders import (
     OrderError,
     add_item_to_order,
@@ -144,15 +144,43 @@ def staff_mark_served(request, order_id):
 
 
 @waiter_required
+def staff_bill(request, order_id):
+    order = get_object_or_404(
+        Order.objects.select_related("table", "waiter").prefetch_related("items__menu_item"),
+        pk=order_id,
+    )
+    if order.status != Order.Status.SERVED:
+        messages.error(request, "Счёт можно показать только для поданного заказа.")
+        return redirect("staff_table_detail", table_id=order.table_id)
+    items = [item for item in order.items.all() if item.status != OrderItem.Status.CANCELLED]
+    return render(
+        request,
+        "staff/bill.html",
+        {"order": order, "table": order.table, "items": items},
+    )
+
+
+@waiter_required
 @require_POST
 def staff_mark_paid(request, order_id):
     order = get_object_or_404(Order, pk=order_id)
+    payment_method = request.POST.get("payment_method", "").strip()
     try:
-        mark_order_paid(order=order)
-        messages.success(request, "Заказ оплачен, стол свободен.")
+        _order, receipt = mark_order_paid(order=order, payment_method=payment_method)
+        messages.success(request, f"Заказ оплачен. Чек {receipt.number}.")
+        return redirect("staff_receipt", receipt_id=receipt.id)
     except OrderError as exc:
         messages.error(request, "; ".join(exc.messages))
-    return redirect("staff_tables")
+        return redirect("staff_table_detail", table_id=order.table_id)
+
+
+@waiter_required
+def staff_receipt(request, receipt_id):
+    receipt = get_object_or_404(
+        Receipt.objects.select_related("order", "order__table").prefetch_related("lines"),
+        pk=receipt_id,
+    )
+    return render(request, "staff/receipt.html", {"receipt": receipt})
 
 
 @waiter_required
@@ -186,6 +214,15 @@ def staff_kitchen(request):
     partial = request.headers.get("HX-Request") == "true"
     template = "staff/partials/kitchen_queue.html" if partial else "staff/kitchen.html"
     return render(request, template, {"items": items})
+
+
+@cook_required
+def staff_recipe(request, item_id):
+    item = get_object_or_404(
+        OrderItem.objects.select_related("menu_item", "order", "order__table"),
+        pk=item_id,
+    )
+    return render(request, "staff/recipe.html", {"item": item, "dish": item.menu_item})
 
 
 @cook_required
@@ -283,6 +320,13 @@ def staff_item_save(request):
     item.name = name
     item.portion = request.POST.get("portion", "").strip()
     item.description = description
+    item.ingredients = request.POST.get("ingredients", "").strip()
+    item.allergens = request.POST.get("allergens", "").strip()
+    item.recipe = request.POST.get("recipe", "").strip()
+    calories = request.POST.get("calories", "").strip()
+    cooking_time = request.POST.get("cooking_time", "").strip()
+    item.calories = int(calories) if calories else None
+    item.cooking_time = int(cooking_time) if cooking_time else None
     item.price = price
     item.sort_order = sort_order
     item.is_available = is_available

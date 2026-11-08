@@ -8,7 +8,11 @@
             {{ item.get_status_display }}
           </span>
         </div>
-        <h3 class="h5 mb-1">{{ item.menu_item.name }} × {{ item.quantity }}</h3>
+        <h3 class="h5 mb-1">
+          <a class="text-decoration-none" href="{% url 'staff_recipe' item.id %}">
+            {{ item.menu_item.name }} × {{ item.quantity }}
+          </a>
+        </h3>
         {% if item.note %}
           <p class="text-secondary small mb-3">{{ item.note }}</p>
         {% else %}

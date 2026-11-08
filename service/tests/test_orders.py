@@ -91,10 +91,13 @@ def test_order_status_flow(waiter, table, latte):
     order.refresh_from_db()
     assert order.status == Order.Status.SERVED
 
-    mark_order_paid(order=order)
+    order, receipt = mark_order_paid(order=order, payment_method="cash")
     order.refresh_from_db()
     assert order.status == Order.Status.PAID
     assert table.open_order is None
+    assert receipt.number
+    assert receipt.lines.count() == 1
+    assert receipt.total == order.total
 
 
 def test_role_access(waiter, cook, admin_user, table):

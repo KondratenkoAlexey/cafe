@@ -346,6 +346,29 @@ h1, h2, h3, h4, .navbar-brand, .display-font {
   --bs-btn-hover-color: #fff;
 }
 
+.confirm-modal {
+  border: 0;
+  border-radius: 1rem;
+  box-shadow: 0 18px 40px rgba(0, 26, 64, 0.28);
+}
+
+.confirm-modal .modal-title {
+  color: var(--cobalt-900);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
+
+.confirm-modal .modal-body {
+  color: #5a6f8c;
+}
+
+.btn-danger {
+  --bs-btn-bg: var(--danger);
+  --bs-btn-border-color: var(--danger);
+  --bs-btn-hover-bg: #c94a3c;
+  --bs-btn-hover-border-color: #c94a3c;
+}
+
 .kitchen-card {
   border-left: 4px solid var(--cobalt-700) !important;
 }

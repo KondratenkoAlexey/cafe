@@ -46,7 +46,10 @@
               {% if item.note %}<span class="text-secondary small">{{ item.note }}</span>{% endif %}
             </div>
             {% if item.status != 'cancelled' and item.status != 'served' and order.status != 'paid' %}
-              <form method="post" action="{% url 'staff_cancel_item' item.id %}" class="mt-2">
+              <form method="post" action="{% url 'staff_cancel_item' item.id %}" class="mt-2"
+                    data-confirm-title="Отменить позицию?"
+                    data-confirm-message="Позиция «{{ item.menu_item.name }}» будет отменена в заказе."
+                    data-confirm-button="Отменить позицию">
                 {% csrf_token %}
                 <button class="btn btn-sm btn-outline-danger" type="submit">Отменить позицию</button>
               </form>
@@ -76,7 +79,10 @@
             </form>
           {% endif %}
           {% if order.can_cancel %}
-            <form method="post" action="{% url 'staff_cancel_order' order.id %}">
+            <form method="post" action="{% url 'staff_cancel_order' order.id %}"
+                  data-confirm-title="Отменить заказ?"
+                  data-confirm-message="Заказ по столу {{ table.number }} будет отменён."
+                  data-confirm-button="Отменить заказ">
               {% csrf_token %}
               <button class="btn btn-outline-danger btn-touch" type="submit">Отменить заказ</button>
             </form>

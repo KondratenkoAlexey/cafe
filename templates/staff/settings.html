@@ -62,7 +62,9 @@
             </div>
           </form>
           <form method="post" action="{% url 'staff_table_delete' table.id %}" class="mt-2"
-                onsubmit="return confirm('Удалить стол {{ table.number }}?');">
+                data-confirm-title="Удалить стол?"
+                data-confirm-message="Стол {{ table.number }} будет удалён. Если по нему есть заказы, удаление будет отклонено."
+                data-confirm-button="Удалить стол">
             {% csrf_token %}
             <button class="btn btn-outline-danger btn-touch" type="submit">Удалить стол</button>
           </form>
@@ -151,7 +153,9 @@
           </form>
           {% if staff_user.id != user.id %}
             <form method="post" action="{% url 'staff_user_delete' staff_user.id %}" class="mt-2"
-                  onsubmit="return confirm('Удалить сотрудника «{{ staff_user.username }}»?');">
+                  data-confirm-title="Удалить сотрудника?"
+                  data-confirm-message="Сотрудник «{{ staff_user.username }}» будет удалён. Если есть связанные заказы, удаление будет отклонено."
+                  data-confirm-button="Удалить">
               {% csrf_token %}
               <button class="btn btn-outline-danger btn-touch" type="submit">Удалить</button>
             </form>

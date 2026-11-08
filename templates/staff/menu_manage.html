@@ -180,7 +180,9 @@
                   </button>
                 </form>
                 <form method="post" action="{% url 'staff_item_delete' item.id %}"
-                      onsubmit="return confirm('Удалить блюдо «{{ item.name }}»?');">
+                      data-confirm-title="Удалить блюдо?"
+                      data-confirm-message="Блюдо «{{ item.name }}» будет удалено. Это действие нельзя отменить."
+                      data-confirm-button="Удалить">
                   {% csrf_token %}
                   <button class="btn btn-outline-danger btn-touch" type="submit">Удалить</button>
                 </form>

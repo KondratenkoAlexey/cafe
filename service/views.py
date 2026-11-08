@@ -1,16 +1,20 @@
+from datetime import datetime
+
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models.deletion import ProtectedError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_POST
 
 from accounts.decorators import admin_required, cook_required, staff_required, waiter_required
 from accounts.models import User
 from menu.models import Category, MenuItem
 
-from .models import DiningTable, Order, OrderItem, Receipt
+from .models import DiningTable, Order, OrderItem, Receipt, Reservation
 from .orders import (
     OrderError,
     add_item_to_order,
@@ -24,6 +28,38 @@ from .orders import (
     set_item_cooking,
     set_item_ready,
 )
+from .reservations import (
+    ReservationError,
+    create_reservation,
+    reservations_for_table_soon,
+    set_reservation_status,
+    upcoming_reservations_queryset,
+)
+
+
+def _parse_starts_at(value: str):
+    value = (value or "").strip()
+    if not value:
+        raise ReservationError("Укажите дату и время.")
+    parsed = parse_datetime(value.replace("T", " ", 1))
+    if parsed is None:
+        try:
+            parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M")
+        except ValueError as exc:
+            raise ReservationError("Некорректная дата или время.") from exc
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
+
+
+def _reservation_form_context(extra=None):
+    context = {
+        "tables": DiningTable.objects.filter(is_active=True).order_by("number"),
+        "durations": [60, 90, 120, 150, 180],
+    }
+    if extra:
+        context.update(extra)
+    return context
 
 
 def _menu_manage_url(category_id=None):
@@ -68,8 +104,126 @@ def staff_home(request):
 
 @waiter_required
 def staff_tables(request):
-    tables = DiningTable.objects.filter(is_active=True).prefetch_related("orders")
+    tables = list(
+        DiningTable.objects.filter(is_active=True)
+        .prefetch_related("orders", "reservations")
+        .order_by("number")
+    )
+    for table in tables:
+        table.soon_reservations = reservations_for_table_soon(table)
     return render(request, "staff/tables.html", {"tables": tables})
+
+
+def public_reservation(request):
+    form = {
+        "guest_name": "",
+        "phone": "",
+        "party_size": "2",
+        "starts_at": "",
+        "duration_minutes": "90",
+        "table_id": "",
+        "note": "",
+    }
+    if request.method == "POST":
+        form = {key: request.POST.get(key, "").strip() for key in form}
+        try:
+            table = None
+            if form["table_id"]:
+                table = get_object_or_404(DiningTable, pk=form["table_id"], is_active=True)
+            reservation = create_reservation(
+                guest_name=form["guest_name"],
+                phone=form["phone"],
+                party_size=int(form["party_size"] or 0),
+                starts_at=_parse_starts_at(form["starts_at"]),
+                duration_minutes=int(form["duration_minutes"] or 90),
+                table=table,
+                note=form["note"],
+                status=Reservation.Status.PENDING,
+            )
+            messages.success(
+                request,
+                f"Заявка принята: стол {reservation.table.number} на "
+                f"{timezone.localtime(reservation.starts_at):%d.%m.%Y %H:%M}. "
+                "Мы подтвердим бронь по телефону.",
+            )
+            return redirect("public_reservation")
+        except (ReservationError, ValueError) as exc:
+            message = "; ".join(exc.messages) if hasattr(exc, "messages") else str(exc)
+            messages.error(request, message)
+
+    return render(
+        request,
+        "service/reservation_public.html",
+        _reservation_form_context({"form": form}),
+    )
+
+
+@waiter_required
+def staff_reservations(request):
+    reservations = upcoming_reservations_queryset()
+    form = {
+        "guest_name": "",
+        "phone": "",
+        "party_size": "2",
+        "starts_at": "",
+        "duration_minutes": "90",
+        "table_id": "",
+        "note": "",
+        "status": Reservation.Status.CONFIRMED,
+    }
+    return render(
+        request,
+        "staff/reservations.html",
+        _reservation_form_context(
+            {
+                "reservations": reservations,
+                "form": form,
+                "statuses": Reservation.Status.choices,
+            }
+        ),
+    )
+
+
+@waiter_required
+@require_POST
+def staff_reservation_create(request):
+    table = None
+    table_id = request.POST.get("table_id", "").strip()
+    try:
+        if table_id:
+            table = get_object_or_404(DiningTable, pk=table_id, is_active=True)
+        reservation = create_reservation(
+            guest_name=request.POST.get("guest_name", ""),
+            phone=request.POST.get("phone", ""),
+            party_size=int(request.POST.get("party_size") or 0),
+            starts_at=_parse_starts_at(request.POST.get("starts_at", "")),
+            duration_minutes=int(request.POST.get("duration_minutes") or 90),
+            table=table,
+            note=request.POST.get("note", ""),
+            created_by=request.user,
+            status=request.POST.get("status") or Reservation.Status.CONFIRMED,
+        )
+        messages.success(
+            request,
+            f"Бронь создана: {reservation.guest_name}, стол {reservation.table.number}.",
+        )
+    except (ReservationError, ValueError) as exc:
+        message = "; ".join(exc.messages) if hasattr(exc, "messages") else str(exc)
+        messages.error(request, message)
+    return redirect("staff_reservations")
+
+
+@waiter_required
+@require_POST
+def staff_reservation_status(request, reservation_id):
+    reservation = get_object_or_404(Reservation, pk=reservation_id)
+    status = request.POST.get("status", "").strip()
+    try:
+        reservation = set_reservation_status(reservation=reservation, status=status)
+        messages.success(request, f"Статус брони: {reservation.get_status_display()}.")
+    except ReservationError as exc:
+        messages.error(request, "; ".join(exc.messages))
+    return redirect("staff_reservations")
 
 
 @waiter_required

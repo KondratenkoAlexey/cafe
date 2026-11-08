@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Брони · Кафе{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <h1>Бронирование</h1>
+  <p>Ближайшие заявки и ручное создание брони.</p>
+</section>
+
+<div class="row g-4">
+  <div class="col-lg-5">
+    <section class="surface-card p-4 h-100">
+      <h2 class="staff-panel-title">Новая бронь</h2>
+      <form method="post" action="{% url 'staff_reservation_create' %}" class="row g-3">
+        {% csrf_token %}
+        <div class="col-12">
+          <label class="form-label">Имя</label>
+          <input class="form-control" type="text" name="guest_name" required>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Телефон</label>
+          <input class="form-control" type="tel" name="phone" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Гостей</label>
+          <input class="form-control" type="number" name="party_size" min="1" value="2" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Длительность</label>
+          <select class="form-select" name="duration_minutes">
+            {% for minutes in durations %}
+              <option value="{{ minutes }}" {% if minutes == 90 %}selected{% endif %}>{{ minutes }} мин</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Дата и время</label>
+          <input class="form-control" type="datetime-local" name="starts_at" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Стол</label>
+          <select class="form-select" name="table_id">
+            <option value="">Подобрать автоматически</option>
+            {% for table in tables %}
+              <option value="{{ table.id }}">Стол {{ table.number }} · {{ table.seats }} мест</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Статус</label>
+          <select class="form-select" name="status">
+            <option value="confirmed">Подтверждена</option>
+            <option value="pending">Ожидает</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Комментарий</label>
+          <input class="form-control" type="text" name="note">
+        </div>
+        <div class="col-12">
+          <button class="btn btn-primary btn-touch" type="submit">Создать бронь</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="col-lg-7">
+    <section class="surface-card p-4">
+      <h2 class="staff-panel-title">Ближайшие брони</h2>
+      {% for reservation in reservations %}
+        <div class="staff-record">
+          <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+            <div class="staff-record-title mb-0">
+              {{ reservation.guest_name }} · стол {{ reservation.table.number }}
+            </div>
+            <span class="badge badge-cobalt">{{ reservation.get_status_display }}</span>
+          </div>
+          <div class="text-secondary small mb-2">
+            {{ reservation.starts_at|date:"d.m.Y H:i" }}–{{ reservation.ends_at|date:"H:i" }}
+            · {{ reservation.party_size }} гост.
+            · {{ reservation.phone }}
+          </div>
+          {% if reservation.note %}
+            <div class="small mb-2">{{ reservation.note }}</div>
+          {% endif %}
+          <div class="d-flex flex-wrap gap-2">
+            {% if reservation.status == 'pending' %}
+              <form method="post" action="{% url 'staff_reservation_status' reservation.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="confirmed">
+                <button class="btn btn-success btn-touch" type="submit">Подтвердить</button>
+              </form>
+            {% endif %}
+            {% if reservation.status == 'pending' or reservation.status == 'confirmed' %}
+              <form method="post" action="{% url 'staff_reservation_status' reservation.id %}"
+                    data-confirm-title="Отменить бронь?"
+                    data-confirm-message="Бронь {{ reservation.guest_name }} будет отменена."
+                    data-confirm-button="Отменить">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="cancelled">
+                <button class="btn btn-outline-danger btn-touch" type="submit">Отменить</button>
+              </form>
+              <form method="post" action="{% url 'staff_reservation_status' reservation.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="completed">
+                <button class="btn btn-outline-primary btn-touch" type="submit">Гости пришли</button>
+              </form>
+              <form method="post" action="{% url 'staff_reservation_status' reservation.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="status" value="no_show">
+                <button class="btn btn-outline-secondary btn-touch" type="submit">Не пришли</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="empty-state py-3">Ближайших броней нет.</div>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

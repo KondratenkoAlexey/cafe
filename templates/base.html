@@ -27,10 +27,16 @@
             <li class="nav-item">
               <a class="nav-link px-3" href="{% url 'public_menu' %}">Меню</a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link px-3" href="{% url 'public_reservation' %}">Бронь</a>
+            </li>
             {% if user.is_authenticated %}
               {% if user.is_waiter_role %}
                 <li class="nav-item">
                   <a class="nav-link px-3" href="{% url 'staff_tables' %}">Столы</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link px-3" href="{% url 'staff_reservations' %}">Брони</a>
                 </li>
               {% endif %}
               {% if user.is_cook_role %}

@@ -3,9 +3,12 @@
 {% block title %}Столы · Кафе{% endblock %}
 
 {% block content %}
-<section class="page-hero">
-  <h1>Столы</h1>
-  <p>Откройте стол, чтобы вести заказ.</p>
+<section class="page-hero d-flex flex-wrap justify-content-between align-items-start gap-3">
+  <div>
+    <h1>Столы</h1>
+    <p>Откройте стол, чтобы вести заказ.</p>
+  </div>
+  <a class="btn btn-outline-light btn-touch" href="{% url 'staff_reservations' %}">Брони</a>
 </section>
 
 <div class="row g-3">
@@ -19,6 +22,13 @@
           <span class="badge text-bg-warning">{{ table.open_order.get_status_display }}</span>
         {% else %}
           <span class="badge text-bg-success">свободен</span>
+        {% endif %}
+        {% if table.soon_reservations %}
+          {% with reservation=table.soon_reservations.0 %}
+            <span class="badge badge-cobalt mt-1">
+              бронь {{ reservation.starts_at|date:"H:i" }}
+            </span>
+          {% endwith %}
         {% endif %}
       </a>
     </div>

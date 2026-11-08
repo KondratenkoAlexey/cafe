@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Бронирование · Кафе{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <h1>Бронирование стола</h1>
+  <p>Оставьте заявку — мы подберём стол или закрепим выбранный, если он свободен.</p>
+</section>
+
+<section class="surface-card p-4">
+  <form method="post" class="row g-3">
+    {% csrf_token %}
+    <div class="col-md-6">
+      <label class="form-label" for="guest_name">Имя</label>
+      <input class="form-control form-control-lg" type="text" name="guest_name" id="guest_name"
+             value="{{ form.guest_name }}" required>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="phone">Телефон</label>
+      <input class="form-control form-control-lg" type="tel" name="phone" id="phone"
+             value="{{ form.phone }}" placeholder="+375 ..." required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="party_size">Гостей</label>
+      <input class="form-control form-control-lg" type="number" name="party_size" id="party_size"
+             min="1" max="20" value="{{ form.party_size }}" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="starts_at">Дата и время</label>
+      <input class="form-control form-control-lg" type="datetime-local" name="starts_at" id="starts_at"
+             value="{{ form.starts_at }}" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label" for="duration_minutes">Длительность</label>
+      <select class="form-select form-select-lg" name="duration_minutes" id="duration_minutes">
+        {% for minutes in durations %}
+          <option value="{{ minutes }}" {% if form.duration_minutes == minutes|stringformat:"s" %}selected{% endif %}>
+            {{ minutes }} мин
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="table_id">Стол (необязательно)</label>
+      <select class="form-select form-select-lg" name="table_id" id="table_id">
+        <option value="">Подобрать автоматически</option>
+        {% for table in tables %}
+          <option value="{{ table.id }}" {% if form.table_id == table.id|stringformat:"s" %}selected{% endif %}>
+            Стол {{ table.number }} · {{ table.seats }} мест
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-6">
+      <label class="form-label" for="note">Комментарий</label>
+      <input class="form-control form-control-lg" type="text" name="note" id="note"
+             value="{{ form.note }}" placeholder="детский стул, у окна">
+    </div>
+    <div class="col-12">
+      <button class="btn btn-primary btn-touch" type="submit">Забронировать</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

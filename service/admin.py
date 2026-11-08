@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DiningTable, Order, OrderItem, Receipt, ReceiptLine
+from .models import DiningTable, Order, OrderItem, Receipt, ReceiptLine, Reservation
 
 
 class OrderItemInline(admin.TabularInline):
@@ -52,3 +52,11 @@ class ReceiptAdmin(admin.ModelAdmin):
         "vat_amount",
         "paid_at",
     )
+
+
+@admin.register(Reservation)
+class ReservationAdmin(admin.ModelAdmin):
+    list_display = ("guest_name", "table", "starts_at", "party_size", "status", "phone")
+    list_filter = ("status",)
+    search_fields = ("guest_name", "phone")
+    list_editable = ("status",)

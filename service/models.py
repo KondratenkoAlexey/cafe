@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -206,3 +207,57 @@ class ReceiptLine(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} × {self.quantity}"
+
+
+class Reservation(models.Model):
+    class Status(models.TextChoices):
+        PENDING = "pending", "Ожидает"
+        CONFIRMED = "confirmed", "Подтверждена"
+        CANCELLED = "cancelled", "Отменена"
+        COMPLETED = "completed", "Завершена"
+        NO_SHOW = "no_show", "Не пришли"
+
+    table = models.ForeignKey(
+        DiningTable,
+        on_delete=models.PROTECT,
+        related_name="reservations",
+        verbose_name="Стол",
+    )
+    guest_name = models.CharField("Имя гостя", max_length=120)
+    phone = models.CharField("Телефон", max_length=32)
+    party_size = models.PositiveIntegerField("Гостей", default=2)
+    starts_at = models.DateTimeField("Начало")
+    duration_minutes = models.PositiveIntegerField("Длительность, мин", default=90)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        verbose_name="Статус",
+    )
+    note = models.CharField("Комментарий", max_length=255, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_reservations",
+        verbose_name="Создал",
+    )
+    created_at = models.DateTimeField("Создана", default=timezone.now)
+    updated_at = models.DateTimeField("Обновлена", auto_now=True)
+
+    class Meta:
+        ordering = ["starts_at"]
+        verbose_name = "Бронь"
+        verbose_name_plural = "Брони"
+
+    def __str__(self) -> str:
+        return f"Бронь {self.guest_name} · стол {self.table.number}"
+
+    @property
+    def ends_at(self):
+        return self.starts_at + timedelta(minutes=self.duration_minutes)
+
+    @property
+    def is_active(self) -> bool:
+        return self.status in {self.Status.PENDING, self.Status.CONFIRMED}

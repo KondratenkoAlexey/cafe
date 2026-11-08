@@ -35,7 +35,7 @@ ENV PATH="/app/.venv/bin:$PATH" \
 
 WORKDIR /app
 
-COPY scripts/entrypoint.sh /entrypoint.sh
+COPY deploy/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh \
  && mkdir -p /app/media /app/staticfiles \
  && chown -R cafe:cafe /app/media /app/staticfiles

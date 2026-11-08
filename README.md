@@ -1,193 +1,145 @@
 # Кафе — меню и смена персонала
 
-Веб-приложение на Django 5.2 для кафе: гости смотрят меню, официанты ведут столы и заказы, повара работают с очередью кухни, администратор редактирует меню и настройки.
+Веб-приложение на Django 5.2 для кафе: гости смотрят меню и бронируют стол, официанты ведут заказы и брони, повара работают с кухней, администратор правит меню, QR и настройки.
 
-Стек: Django, UV, PostgreSQL, Redis, Gunicorn, nginx, Docker. Предназначено для Raspberry Pi 4 в локальной сети кафе.
+**Стек:** Django, UV, PostgreSQL, Redis, Gunicorn, nginx, Docker.  
+**Целевая среда:** Raspberry Pi 4 (arm64) в локальной сети кафе.
+
+Репозиторий: https://github.com/KondratenkoAlexey/cafe
+
+## Возможности
+
+- Публичное меню по категориям (цены в BYN, фото, состав, калории, аллергены)
+- Бронирование стола гостем (`/reserve/`) и управление бронями у персонала
+- Заказы по столам: кухня → подано → счёт / чек (НДС 20%) → оплата
+- Рецепт блюда для повара, стоп-лист для админа
+- QR-код входа на сайт с редактируемым адресом (`/staff/qr/`)
 
 ## Роли
 
 | Логин (после seed) | Роль | Возможности |
 |---|---|---|
-| `admin` | Администратор | Всё + меню, столы, сотрудники |
-| `waiter` | Официант | Столы, заказы, «подано», «оплачено» |
-| `cook` | Повар | Очередь кухни |
+| `admin` | Администратор | Меню, столы, сотрудники, QR, брони, заказы |
+| `waiter` | Официант | Столы, заказы, счёт/чек, брони |
+| `cook` | Повар | Очередь кухни, рецепт |
 
 Пароли задаются в `.env` (`SEED_*_PASSWORD`). После первого запуска смените их.
 
-## Запись проекта в GitHub
+## Архитектура
 
-Репозиторий в GitHub уже создан. Локально git инициализирован, но **коммитов ещё нет**, remote не привязан. Файл `.env` в git не попадёт (он в `.gitignore`) — так и нужно.
+| Сервис | Назначение |
+|---|---|
+| `nginx` | Единственный порт наружу: **80** |
+| `web` | Django + Gunicorn |
+| `db` | PostgreSQL 16 (только внутри Compose) |
+| `redis` | Кэш меню (только внутри Compose) |
 
-На Windows в PowerShell из каталога проекта:
+При старте `web` (`deploy/entrypoint.sh`) выполняет `migrate`, `collectstatic` и `seed_cafe`.
 
-```powershell
-cd C:\Users\user\Documents\Cafe
+Каталог `deploy/`:
 
-# 1. Первый коммит
-git add .
-git status
-git commit -m "Initial cafe app: Django menu, staff orders, Docker stack"
+- `nginx.conf` — конфиг nginx
+- `entrypoint.sh` — старт контейнера `web`
+- `deploy-pi.sh` — короткий запуск стека на Pi
 
-# 2. Привязать GitHub (подставьте свой URL)
-git remote add origin https://github.com/ВАШ_ЛОГИН/ВАШ_РЕПО.git
-# или по SSH:
-# git remote add origin git@github.com:ВАШ_ЛОГИН/ВАШ_РЕПО.git
+### Медиа
 
-# 3. Отправить код
-git branch -M main
-git push -u origin main
-```
+- `media/seed_photos/` — исходники фото для seed
+- `media/menu/` — рабочие фото блюд (`ImageField`, `upload_to="menu/"`)
 
-Если GitHub при создании репозитория уже положил `README` или `.gitignore`, перед `push` сделайте:
-
-```powershell
-git pull origin main --rebase
-git push -u origin main
-```
-
-Авторизацию GitHub на Windows удобно делать через Git Credential Manager или SSH-ключ.
-
-После успешного `push` пароль от Raspberry Pi и содержимое `.env` в репозиторий не кладите.
-
-База данных везде одна — **PostgreSQL**. SQLite в проекте не используется.
-
-Снаружи наружу смотрит только **nginx (порт 80)**. PostgreSQL и Redis доступны лишь внутри сети Compose по именам сервисов `db` и `redis`.
+Фото в git не коммитятся (`media/*`, кроме `media/.gitkeep`). На сервере они живут в bind-mount `./media`.
 
 ## Локальный запуск (Docker)
 
 ```bash
 cp .env.example .env
-# отредактируйте пароли и SECRET_KEY
+# отредактируйте SECRET_KEY, пароли БД и SEED_*_PASSWORD
 docker compose up -d --build
 ```
 
 Откройте http://localhost/
 
-Команды Django и тесты — внутри контейнера `web`:
-
 ```bash
-docker compose exec web python manage.py seed_cafe
 docker compose exec web pytest -q
 docker compose logs -f web
+docker compose exec web python manage.py seed_cafe
 ```
 
-UV на ПК нужен для зависимостей и IDE (`uv sync`); сам сайт и БД работают через Compose.
+UV на ПК нужен для зависимостей и IDE (`uv sync`); сайт и БД работают через Compose.
+
+## Переменные окружения
+
+Смотрите `.env.example`. Важно:
+
+| Переменная | Смысл |
+|---|---|
+| `ALLOWED_HOSTS` / `CSRF_TRUSTED_ORIGINS` | IP/хосты, с которых открывают сайт (например `192.168.1.104` и `192.168.1.85`) |
+| `PUBLIC_BASE_URL` | Адрес по умолчанию в QR; на `/staff/qr/` его можно сменить без правки `.env` |
+| `POSTGRES_PASSWORD` | Должен совпадать с паролем в `DATABASE_URL` |
+| `SEED_*_PASSWORD` | Пароли учёток после seed |
 
 ## Развёртывание на Raspberry Pi
 
-Целевой сервер:
-
 - SSH: `ssh home-server@192.168.1.104`
-- Каталог на сервере: `/home/home-server/cafe`
-- Адрес в браузере: http://192.168.1.104/
-
-С компьютера агента сейчас до Pi достучаться не удалось (`Permission denied` / `WinError 10013` на порт 22). Инструкция ниже рассчитана на запуск **с машины, где SSH до Pi уже работает**, либо прямо на самом Pi.
+- Каталог: `/home/home-server/cafe`
+- Сайт: http://192.168.1.104/
 
 ### 1. Подготовка Pi
 
-Подключитесь:
-
 ```bash
 ssh home-server@192.168.1.104
-```
-
-Проверьте архитектуру и Docker:
-
-```bash
-uname -m
-# ожидается: aarch64
-
+uname -m          # ожидается aarch64
 docker --version
 docker compose version
 ```
 
-Если Docker не установлен (Raspberry Pi OS 64-bit):
+Если Docker ещё нет (Raspberry Pi OS 64-bit):
 
 ```bash
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker home-server
-# выйдите из SSH и зайдите снова, чтобы группа docker применилась
+# выйдите из SSH и зайдите снова
 ```
 
-### 2. Получить код на Pi
-
-**Вариант A — клон с GitHub (предпочтительно):**
+### 2. Код на Pi
 
 ```bash
 cd /home/home-server
-git clone https://github.com/ВАШ_ЛОГИН/ВАШ_РЕПО.git cafe
+git clone https://github.com/KondratenkoAlexey/cafe.git cafe
 cd cafe
+cp .env.example .env
+nano .env
 ```
 
-**Вариант B — копирование с ПК (если GitHub ещё не готов):**
+В `.env` укажите `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` и `PUBLIC_BASE_URL` под IP Pi. Положитесь `media/seed_photos` (или весь `media`), если фото нужны сразу после seed.
 
-С Windows (в PowerShell, когда SSH доступен):
+Альтернатива без Git — скопировать проект с ПК:
 
 ```powershell
 scp -r C:\Users\user\Documents\Cafe home-server@192.168.1.104:/home/home-server/cafe
 ```
 
-На Pi затем удалите лишнее, если скопировалось:
+### 3. Сборка и запуск
 
-```bash
-cd /home/home-server/cafe
-rm -rf .venv __pycache__ staticfiles
-```
-
-### 3. Создать `.env` на сервере
-
-```bash
-cd /home/home-server/cafe
-cp .env.example .env
-nano .env
-```
-
-Минимальный рабочий пример:
-
-```env
-DEBUG=0
-SECRET_KEY=замените-на-длинную-случайную-строку
-ALLOWED_HOSTS=192.168.1.104,localhost,127.0.0.1
-CSRF_TRUSTED_ORIGINS=http://192.168.1.104
-
-POSTGRES_DB=cafe
-POSTGRES_USER=cafe
-POSTGRES_PASSWORD=замените-пароль-бд
-DATABASE_URL=postgres://cafe:замените-пароль-бд@db:5432/cafe
-
-REDIS_URL=redis://redis:6379/1
-
-SEED_ADMIN_PASSWORD=замените
-SEED_WAITER_PASSWORD=замените
-SEED_COOK_PASSWORD=замените
-```
-
-`POSTGRES_PASSWORD` и пароль в `DATABASE_URL` должны совпадать.
-
-### 4. Сборка и запуск
-
-Сборку делайте **на самом Pi**, чтобы образ был arm64:
+Сборку делайте **на Pi** (образ arm64):
 
 ```bash
 cd /home/home-server/cafe
 docker compose up -d --build
+# или: sh deploy/deploy-pi.sh
 docker compose ps
 docker compose logs web --tail 50
 ```
 
-При старте контейнер `web` сам выполнит `migrate`, `collectstatic` и `seed_cafe`.
+### 4. Проверка
 
-Откройте с телефона или ноутбука в Wi‑Fi кафе: http://192.168.1.104/
+1. Гость: меню `/`, бронь `/reserve/`, цены и фото видны.
+2. Официант: `waiter` → столы → заказ → «На кухню»; брони в «Брони».
+3. Повар: `cook` → кухня → «Готовится» → «Готово» (рецепт по кнопке).
+4. Официант: «Подано» → «Счёт» → оплата → чек; стол свободен.
+5. Админ: «Блюда» (стоп-лист), «QR» (адрес для гостей), «Настройки».
 
-### 5. Проверка после запуска
-
-1. Гость: меню на `/`, категории и цены видны.
-2. Официант: вход `waiter` / пароль из `.env` → столы → открыть заказ → добавить блюдо → «На кухню».
-3. Повар: вход `cook` → кухня → «Готовится» → «Готово».
-4. Официант: «Подано» → «Оплачено», стол снова свободен.
-5. Админ: вход `admin` → «Блюда» → стоп-лист → на публичном меню появляется «закончилось».
-
-### 6. Обновление с GitHub
+### 5. Обновление
 
 ```bash
 ssh home-server@192.168.1.104
@@ -199,20 +151,23 @@ docker compose up -d --build
 ### Полезные команды
 
 ```bash
-docker compose logs -f          # все логи
-docker compose logs -f web      # только Django
+docker compose logs -f
+docker compose logs -f web
 docker compose restart web
-docker compose down             # остановить стек (данные БД в volume сохранятся)
-docker compose down -v          # остановить и удалить данные БД — осторожно
+docker compose down          # данные БД в volume сохраняются
+docker compose down -v       # удалить и данные БД
 ```
-
-Наружу публикуется только порт **80** (nginx). PostgreSQL и Redis в локальную сеть не пробрасываются.
 
 ## Экраны
 
-- `/` — публичное меню
-- `/staff/login/` — вход персонала
-- `/staff/tables/` — столы официанта
-- `/staff/kitchen/` — очередь кухни
-- `/staff/menu/` — редактирование меню (админ)
-- `/staff/settings/` — столы и сотрудники (админ)
+| URL | Кто | Назначение |
+|---|---|---|
+| `/` | Гость | Меню по категориям |
+| `/reserve/` | Гость | Бронирование стола |
+| `/staff/login/` | Персонал | Вход |
+| `/staff/tables/` | Официант | Столы и заказы |
+| `/staff/reservations/` | Официант | Брони |
+| `/staff/kitchen/` | Повар | Очередь кухни |
+| `/staff/menu/` | Админ | Редактирование меню |
+| `/staff/qr/` | Админ | QR входа на сайт |
+| `/staff/settings/` | Админ | Столы и сотрудники |

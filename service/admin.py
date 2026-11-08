@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import DiningTable, Order, OrderItem, Receipt, ReceiptLine, Reservation
+from .models import CafeSettings, DiningTable, Order, OrderItem, Receipt, ReceiptLine, Reservation
 
 
 class OrderItemInline(admin.TabularInline):
@@ -14,6 +14,11 @@ class ReceiptLineInline(admin.TabularInline):
     extra = 0
     readonly_fields = ("name", "quantity", "unit_price", "line_total", "sort_order")
     can_delete = False
+
+
+@admin.register(CafeSettings)
+class CafeSettingsAdmin(admin.ModelAdmin):
+    list_display = ("qr_payload", "updated_at")
 
 
 @admin.register(DiningTable)

@@ -10,6 +10,34 @@ from django.utils import timezone
 from menu.models import MenuItem
 
 
+class CafeSettings(models.Model):
+    """Единственная запись настроек кафе (pk=1)."""
+
+    qr_payload = models.CharField(
+        "Текст в QR",
+        max_length=500,
+        blank=True,
+        help_text="Обычно адрес сайта, например http://192.168.1.104/",
+    )
+    updated_at = models.DateTimeField("Обновлено", auto_now=True)
+
+    class Meta:
+        verbose_name = "Настройки кафе"
+        verbose_name_plural = "Настройки кафе"
+
+    def __str__(self) -> str:
+        return "Настройки кафе"
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
 class DiningTable(models.Model):
     number = models.PositiveIntegerField("Номер", unique=True)
     seats = models.PositiveIntegerField("Мест", default=4)

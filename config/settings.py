@@ -18,6 +18,8 @@ SECRET_KEY = env("SECRET_KEY", default="django-insecure-dev-only-change-me")
 DEBUG = env("DEBUG")
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+# Адрес для QR по умолчанию (можно переопределить на странице «QR» у персонала).
+PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", default="http://192.168.1.104/")
 
 INSTALLED_APPS = [
     "django.contrib.admin",

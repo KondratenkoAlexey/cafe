@@ -399,6 +399,23 @@ h1, h2, h3, h4, .navbar-brand, .display-font {
   color: var(--cobalt-900);
 }
 
+.qr-image {
+  width: min(280px, 70vw);
+  height: auto;
+  image-rendering: pixelated;
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid rgba(0, 71, 171, 0.15);
+}
+
+.qr-payload-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.95rem;
+  word-break: break-all;
+  color: var(--cobalt-900);
+}
+
 @media print {
   .navbar,
   .page-hero,
@@ -417,6 +434,18 @@ h1, h2, h3, h4, .navbar-brand, .display-font {
   .receipt-sheet {
     box-shadow: none !important;
     border: 0 !important;
+  }
+
+  .qr-print-card {
+    box-shadow: none !important;
+    border: 0 !important;
+    max-width: 420px;
+    margin: 2rem auto;
+  }
+
+  .qr-image {
+    width: 320px;
+    border: 0;
   }
 }
 

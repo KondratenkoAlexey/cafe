@@ -50,6 +50,9 @@ urlpatterns = [
     path("staff/settings/table/<int:table_id>/delete/", service_views.staff_table_delete, name="staff_table_delete"),
     path("staff/settings/user/", service_views.staff_user_save, name="staff_user_save"),
     path("staff/settings/user/<int:user_id>/delete/", service_views.staff_user_delete, name="staff_user_delete"),
+    path("staff/qr/", service_views.staff_qr, name="staff_qr"),
+    path("staff/qr/save/", service_views.staff_qr_save, name="staff_qr_save"),
+    path("staff/qr/image.png", service_views.staff_qr_image, name="staff_qr_image"),
 ]
 
 if settings.DEBUG:

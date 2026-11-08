@@ -4,11 +4,12 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.db.models.deletion import ProtectedError
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_GET, require_POST
 
 from accounts.decorators import admin_required, cook_required, staff_required, waiter_required
 from accounts.models import User
@@ -28,6 +29,7 @@ from .orders import (
     set_item_cooking,
     set_item_ready,
 )
+from .qrcode_utils import QR_PRESETS, build_qr_png, get_qr_payload, set_qr_payload
 from .reservations import (
     ReservationError,
     create_reservation,
@@ -529,6 +531,50 @@ def staff_settings(request):
         "staff/settings.html",
         {"tables": tables, "users": users, "roles": User.Role.choices},
     )
+
+
+@admin_required
+def staff_qr(request):
+    payload = get_qr_payload()
+    return render(
+        request,
+        "staff/qr.html",
+        {
+            "qr_payload": payload,
+            "qr_presets": QR_PRESETS,
+            "qr_image_url": reverse("staff_qr_image"),
+        },
+    )
+
+
+@admin_required
+@require_POST
+def staff_qr_save(request):
+    try:
+        payload = set_qr_payload(request.POST.get("qr_payload", ""))
+        messages.success(request, f"QR обновлён: {payload}")
+    except ValueError as exc:
+        messages.error(request, str(exc))
+    return redirect("staff_qr")
+
+
+@admin_required
+@require_GET
+def staff_qr_image(request):
+    payload = request.GET.get("payload")
+    if payload:
+        try:
+            from .qrcode_utils import normalize_qr_payload
+
+            text = normalize_qr_payload(payload)
+        except ValueError:
+            text = get_qr_payload()
+    else:
+        text = get_qr_payload()
+    png = build_qr_png(text)
+    response = HttpResponse(png, content_type="image/png")
+    response["Cache-Control"] = "no-store"
+    return response
 
 
 @admin_required

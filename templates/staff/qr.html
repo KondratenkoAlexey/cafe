@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}QR-вход · Кафе{% endblock %}
+
+{% block content %}
+<section class="page-hero no-print">
+  <h1>QR для гостей</h1>
+  <p>Напечатайте код — гость сканирует камерой и открывает сайт без ввода адреса.</p>
+</section>
+
+<div class="row g-4 align-items-start">
+  <div class="col-lg-6 no-print">
+    <section class="surface-card p-4">
+      <h2 class="staff-panel-title">Текст в QR</h2>
+      <p class="text-secondary small mb-3">
+        Можно подставить любой адрес для тестов: Pi, ноутбук или localhost.
+      </p>
+      <form method="post" action="{% url 'staff_qr_save' %}" class="row g-3" id="qrForm">
+        {% csrf_token %}
+        <div class="col-12">
+          <label class="form-label" for="qr_payload">Адрес или строка</label>
+          <input class="form-control form-control-lg" type="text" name="qr_payload" id="qr_payload"
+                 value="{{ qr_payload }}" maxlength="500" required
+                 placeholder="http://192.168.1.104/">
+        </div>
+        <div class="col-12 d-flex flex-wrap gap-2">
+          {% for url, label in qr_presets %}
+            <button type="button" class="btn btn-outline-primary btn-touch qr-preset"
+                    data-payload="{{ url }}">{{ label }}</button>
+          {% endfor %}
+        </div>
+        <div class="col-12 d-flex flex-wrap gap-2">
+          <button class="btn btn-primary btn-touch" type="submit">Сохранить</button>
+          <button class="btn btn-outline-secondary btn-touch" type="button" onclick="window.print()">Печать</button>
+        </div>
+      </form>
+    </section>
+  </div>
+
+  <div class="col-lg-6">
+    <section class="surface-card p-4 text-center qr-print-card">
+      <h2 class="staff-panel-title mb-1">Меню кафе</h2>
+      <p class="text-secondary small mb-3">Отсканируйте код камерой телефона</p>
+      <img class="qr-image" id="qrPreview"
+           src="{% url 'staff_qr_image' %}"
+           alt="QR-код входа на сайт"
+           width="280" height="280">
+      <div class="qr-payload-text mt-3" id="qrPayloadLabel">{{ qr_payload }}</div>
+    </section>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const input = document.getElementById("qr_payload");
+  const preview = document.getElementById("qrPreview");
+  const label = document.getElementById("qrPayloadLabel");
+  const imageBase = "{% url 'staff_qr_image' %}";
+
+  function refreshPreview() {
+    const value = (input.value || "").trim();
+    label.textContent = value;
+    if (!value) return;
+    preview.src = imageBase + "?payload=" + encodeURIComponent(value) + "&t=" + Date.now();
+  }
+
+  let timer = null;
+  input.addEventListener("input", function () {
+    clearTimeout(timer);
+    timer = setTimeout(refreshPreview, 250);
+  });
+
+  document.querySelectorAll(".qr-preset").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      input.value = btn.getAttribute("data-payload");
+      refreshPreview();
+    });
+  });
+})();
+</script>
+{% endblock %}

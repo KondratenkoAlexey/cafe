@@ -44,8 +44,7 @@
 
 ### Медиа
 
-- `media/seed_photos/` — исходники фото для seed
-- `media/menu/` — рабочие фото блюд (`ImageField`, `upload_to="menu/"`)
+Фото блюд лежат в одной папке: `media/menu/`. Seed и загрузки админки используют её же (`upload_to="menu/"`).
 
 Фото в git не коммитятся (`media/*`, кроме `media/.gitkeep`). На сервере они живут в bind-mount `./media`.
 
@@ -111,7 +110,7 @@ cp .env.example .env
 nano .env
 ```
 
-В `.env` укажите `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` и `PUBLIC_BASE_URL` под IP Pi. Положитесь `media/seed_photos` (или весь `media`), если фото нужны сразу после seed.
+В `.env` укажите `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS` и `PUBLIC_BASE_URL` под IP Pi. Скопируйте `media/menu/` (или весь `media`), если фото нужны сразу после seed.
 
 Альтернатива без Git — скопировать проект с ПК:
 

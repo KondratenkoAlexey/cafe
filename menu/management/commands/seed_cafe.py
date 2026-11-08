@@ -2,7 +2,6 @@ from decimal import Decimal
 from pathlib import Path
 
 from django.conf import settings
-from django.core.files import File
 from django.core.management.base import BaseCommand
 
 from accounts.models import User
@@ -10,7 +9,8 @@ from menu.models import Category, MenuItem, invalidate_menu_cache
 from menu.seed_details import DISH_DETAILS
 from service.models import DiningTable
 
-SEED_PHOTOS = Path(settings.MEDIA_ROOT) / "seed_photos"
+# Единственная папка с фото блюд (и для seed, и для ImageField upload_to="menu/").
+MENU_PHOTOS = Path(settings.MEDIA_ROOT) / "menu"
 
 CATEGORIES = [
     {
@@ -251,7 +251,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--force-photos",
             action="store_true",
-            help="Перезаписать фото блюд из media/seed_photos",
+            help="Привязать фото блюд заново из media/menu (без копирования файлов)",
         )
 
     def handle(self, *args, **options):
@@ -357,8 +357,8 @@ class Command(BaseCommand):
             MenuItem.objects.exclude(name__in=keep_item_names).update(is_available=False)
 
     def _attach_photos(self, force: bool = False):
-        if not SEED_PHOTOS.exists():
-            self.stdout.write(self.style.WARNING(f"Нет папки с фото: {SEED_PHOTOS}"))
+        if not MENU_PHOTOS.exists():
+            self.stdout.write(self.style.WARNING(f"Нет папки с фото: {MENU_PHOTOS}"))
             return
 
         attached = 0
@@ -366,13 +366,17 @@ class Command(BaseCommand):
             item = MenuItem.objects.filter(name=name).first()
             if not item:
                 continue
-            photo_path = SEED_PHOTOS / photo_name
+            photo_path = MENU_PHOTOS / photo_name
             if not photo_path.exists():
+                continue
+            relative = f"menu/{photo_name}"
+            if item.photo and item.photo.name == relative and not force:
                 continue
             if item.photo and not force:
                 continue
-            with photo_path.open("rb") as handle:
-                item.photo.save(photo_name, File(handle), save=True)
+            # Ссылка на уже лежащий файл — без копирования в media.
+            item.photo.name = relative
+            item.save(update_fields=["photo"])
             attached += 1
             self.stdout.write(f"Фото: {name} ← {photo_name}")
 

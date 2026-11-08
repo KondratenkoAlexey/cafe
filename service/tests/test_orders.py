@@ -120,7 +120,8 @@ def test_role_access(waiter, cook, admin_user, table):
     assert client.get(reverse("staff_tables")).status_code == 200
     assert client.get(reverse("staff_kitchen")).status_code == 200
     assert client.get(reverse("staff_menu_manage")).status_code == 200
-    assert client.get(reverse("staff_settings")).status_code == 200
+    assert client.get(reverse("staff_settings_tables")).status_code == 200
+    assert client.get(reverse("staff_settings_users")).status_code == 200
 
 
 def test_menu_cache_invalidation(latte):

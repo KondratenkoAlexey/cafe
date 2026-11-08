@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Категории · Кафе{% endblock %}
+
+{% block content %}
+<section class="page-hero">
+  <h1>Категории</h1>
+  <p>Разделы публичного меню: название, порядок и видимость.</p>
+</section>
+
+<section class="surface-card p-4 mb-4">
+  <h2 class="staff-panel-title">Новая категория</h2>
+  <form method="post" action="{% url 'staff_category_save' %}" class="row g-3">
+    {% csrf_token %}
+    <div class="col-md-6">
+      <label class="form-label">Название</label>
+      <input class="form-control" type="text" name="name" required>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Порядок</label>
+      <input class="form-control" type="number" name="sort_order" value="0">
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+      <div class="form-check mb-2">
+        <input class="form-check-input" type="checkbox" name="is_active" id="cat_active_new" checked>
+        <label class="form-check-label" for="cat_active_new">Активна</label>
+      </div>
+    </div>
+    <div class="col-12">
+      <button class="btn btn-primary btn-touch" type="submit">Создать категорию</button>
+    </div>
+  </form>
+</section>
+
+<section class="surface-card p-4">
+  <h2 class="staff-panel-title">Список категорий</h2>
+  {% for category in categories %}
+    <div class="staff-record">
+      <div class="staff-record-title">
+        {{ category.name }}
+        {% if not category.is_active %}<span class="badge text-bg-secondary ms-2">скрыта</span>{% endif %}
+        <span class="badge badge-cobalt ms-2">{{ category.items.all|length }}</span>
+      </div>
+      <form method="post" action="{% url 'staff_category_save' %}" class="row g-3 align-items-end">
+        {% csrf_token %}
+        <input type="hidden" name="category_id" value="{{ category.id }}">
+        <div class="col-md-5">
+          <label class="form-label">Название</label>
+          <input class="form-control" type="text" name="name" value="{{ category.name }}" required>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label">Порядок</label>
+          <input class="form-control" type="number" name="sort_order" value="{{ category.sort_order }}">
+        </div>
+        <div class="col-md-3">
+          <div class="form-check mt-4">
+            <input class="form-check-input" type="checkbox" name="is_active" id="cat_active_{{ category.id }}" {% if category.is_active %}checked{% endif %}>
+            <label class="form-check-label" for="cat_active_{{ category.id }}">Активна</label>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <button class="btn btn-outline-primary w-100 btn-touch" type="submit">Сохранить</button>
+        </div>
+      </form>
+    </div>
+  {% empty %}
+    <div class="empty-state py-3">Категорий пока нет.</div>
+  {% endfor %}
+</section>
+{% endblock %}
